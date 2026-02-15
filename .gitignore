@@ -8,7 +8,6 @@ Thumbs.db
 # ENV
 # =========================
 .env
-.env.example
 .env.local
 .env.*.local
 
