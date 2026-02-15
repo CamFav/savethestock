@@ -2,7 +2,7 @@ namespace SaveTheStock.Domain.Entities;
 
 /// <summary>
 /// Represents a user account belonging to a company.
-/// An account can have different roles (Owner or Member) and is used for authentication,
+/// An account can have different roles (Owner or Member)
 /// authorization, and tracking actions performed in the system.
 /// This entity belongs to the Domain layer and models core business data.
 /// </summary>

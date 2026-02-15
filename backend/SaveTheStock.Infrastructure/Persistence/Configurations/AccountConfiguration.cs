@@ -26,7 +26,7 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
 
         builder.Property(x => x.PasswordHash)
             .HasColumnName("password_hash")
-            .hasMaxLength(255)
+            .HasMaxLength(255)
             .IsRequired();
 
         builder.Property(x => x.DisplayName)
