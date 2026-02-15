@@ -5,8 +5,8 @@ services:
     restart: always
     environment:
       POSTGRES_DB: savethestock
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: savethestock
+      POSTGRES_PASSWORD: savethestock
     ports:
       - "5432:5432"
     volumes:
