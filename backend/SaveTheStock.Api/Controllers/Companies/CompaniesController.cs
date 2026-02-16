@@ -20,17 +20,29 @@ public class CompaniesController : ControllerBase
         _dbContext = dbContext;
     }
 
+    private static CompanyResponse MapToResponse(Company company)
+    {
+        return new CompanyResponse
+        {
+            Id = company.Id,
+            Name = company.Name,
+            CreatedAt = company.CreatedAt
+        };
+    }
+
     /// <summary>
     /// [GET] Retrieves all companies.
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<List<Company>>> GetCompanies(CancellationToken cancellationToken)
+    public async Task<ActionResult<List<CompanyResponse>>> GetCompanies(CancellationToken cancellationToken)
     {
         var companies = await _dbContext.Companies
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        return Ok(companies);
+        var response = companies.Select(MapToResponse).ToList();
+
+        return Ok(response);
     }
 
 
@@ -38,7 +50,7 @@ public class CompaniesController : ControllerBase
     /// [GET] Retrieves a company by its ID.
     /// </summary>
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<Company>> GetCompanyById(Guid id, CancellationToken cancellationToken)
+    public async Task<ActionResult<CompanyResponse>> GetCompanyById(Guid id, CancellationToken cancellationToken)
     {
         var company = await _dbContext.Companies
             .AsNoTracking()
@@ -47,8 +59,9 @@ public class CompaniesController : ControllerBase
         if (company is null)
             return NotFound();
 
-        return Ok(company);
+        return Ok(MapToResponse(company));
     }
+
 
 
     
@@ -56,9 +69,10 @@ public class CompaniesController : ControllerBase
     /// [POST] Creates a new company.
     /// </summary>
     [HttpPost]
-    public async Task<ActionResult<Company>> CreateCompany([FromBody] CreateCompanyRequest request)
+    public async Task<ActionResult<CompanyResponse>> CreateCompany(
+        [FromBody] CreateCompanyRequest request,
+        CancellationToken cancellationToken)
     {
-        // note : moove to app layer later
         if (string.IsNullOrWhiteSpace(request.Name))
             return BadRequest("Company name is required.");
 
@@ -70,29 +84,32 @@ public class CompaniesController : ControllerBase
         };
 
         _dbContext.Companies.Add(company);
-        await _dbContext.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return CreatedAtAction(nameof(GetCompanyById), new { id = company.Id }, company);
+        return CreatedAtAction(nameof(GetCompanyById), new { id = company.Id }, MapToResponse(company));
     }
 
     /// <summary>
     /// [PUT] Updates an existing company.
     /// </summary>
     [HttpPut("{id:guid}")]
-    public async Task<ActionResult<Company>> UpdateCompany(Guid id, [FromBody] UpdateCompanyRequest request)
+    public async Task<ActionResult<CompanyResponse>> UpdateCompany(
+        Guid id,
+        [FromBody] UpdateCompanyRequest request,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
             return BadRequest("Company name is required.");
 
-        var company = await _dbContext.Companies.FindAsync(id);
+        var company = await _dbContext.Companies.FindAsync(new object[] { id }, cancellationToken);
 
         if (company is null)
             return NotFound();
 
         company.Name = request.Name.Trim();
 
-        await _dbContext.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return Ok(company);
+        return Ok(MapToResponse(company));
     }
 }
