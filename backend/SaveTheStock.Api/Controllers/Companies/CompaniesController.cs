@@ -24,26 +24,32 @@ public class CompaniesController : ControllerBase
     /// [GET] Retrieves all companies.
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<List<Company>>> GetCompanies()
+    public async Task<ActionResult<List<Company>>> GetCompanies(CancellationToken cancellationToken)
     {
-        var companies = await _dbContext.Companies.ToListAsync();
+        var companies = await _dbContext.Companies
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
 
         return Ok(companies);
     }
+
 
     /// <summary>
     /// [GET] Retrieves a company by its ID.
     /// </summary>
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<Company>> GetCompanyById(Guid id)
+    public async Task<ActionResult<Company>> GetCompanyById(Guid id, CancellationToken cancellationToken)
     {
-        var company = await _dbContext.Companies.FindAsync(id);
+        var company = await _dbContext.Companies
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
         if (company is null)
             return NotFound();
 
         return Ok(company);
     }
+
 
     
     /// <summary>
