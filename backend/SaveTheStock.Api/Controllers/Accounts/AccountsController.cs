@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,7 @@ namespace SaveTheStock.Api.Controllers.Accounts;
 
 [ApiController]
 [Route("api/accounts")]
+[Authorize]
 public sealed class AccountsController : ControllerBase
 {
     private const string TempPasswordPrefix = "TEMP:";
@@ -29,14 +31,15 @@ public sealed class AccountsController : ControllerBase
     [HttpPost("invite")]
     [ProducesResponseType(typeof(AccountResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<AccountResponse>> InviteAccount(
-        [FromQuery] Guid companyId,
         [FromBody] InviteAccountRequest request,
         CancellationToken cancellationToken)
     {
+        var companyId = GetCompanyId();
         if (companyId == Guid.Empty)
         {
-            return BadRequest("companyId is required.");
+            return Unauthorized();
         }
 
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
@@ -44,14 +47,12 @@ public sealed class AccountsController : ControllerBase
         var emailAlreadyUsed = await _dbContext.Accounts
             .AsNoTracking()
             .AnyAsync(a =>
-                a.CompanyId == companyId &&
-                a.DeletedAt == null &&
                 a.Email.ToLower() == normalizedEmail,
                 cancellationToken);
 
         if (emailAlreadyUsed)
         {
-            return BadRequest("An account with this email already exists in this company.");
+            return BadRequest("An account with this email already exists.");
         }
 
         var temporaryPassword = GenerateTemporaryPassword(24);
@@ -88,14 +89,14 @@ public sealed class AccountsController : ControllerBase
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(AccountResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<AccountResponse>> GetById(
         Guid id,
-        [FromQuery] Guid companyId,
         CancellationToken cancellationToken)
     {
+        var companyId = GetCompanyId();
         if (companyId == Guid.Empty)
-            return BadRequest("companyId is required.");
+            return Unauthorized();
 
         var account = await _dbContext.Accounts
             .AsNoTracking()
@@ -153,22 +154,23 @@ public sealed class AccountsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Update(
         Guid id,
-        [FromQuery] Guid companyId,
         [FromBody] UpdateAccountRequest request,
         CancellationToken cancellationToken)
     {
+        var companyId = GetCompanyId();
         if (companyId == Guid.Empty)
-            return BadRequest("companyId is required.");
+            return Unauthorized();
 
         var account = await _dbContext.Accounts
-            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(a =>
+                a.Id == id &&
+                a.CompanyId == companyId,
+                cancellationToken);
 
         if (account is null)
-            return NotFound();
-
-        if (account.CompanyId != companyId)
             return NotFound();
 
         if (account.DeletedAt != null)
@@ -181,14 +183,12 @@ public sealed class AccountsController : ControllerBase
             var emailExists = await _dbContext.Accounts
                 .AsNoTracking()
                 .AnyAsync(a =>
-                    a.CompanyId == companyId &&
                     a.Id != id &&
-                    a.DeletedAt == null &&
                     a.Email.ToLower() == normalizedEmail,
                     cancellationToken);
 
             if (emailExists)
-                return BadRequest("Email already used in this company.");
+                return BadRequest("Email already used.");
 
             account.Email = normalizedEmail;
         }
@@ -215,21 +215,22 @@ public sealed class AccountsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> SoftDelete(
         Guid id,
-        [FromQuery] Guid companyId,
         CancellationToken cancellationToken)
     {
+        var companyId = GetCompanyId();
         if (companyId == Guid.Empty)
-            return BadRequest("companyId is required.");
+            return Unauthorized();
 
         var account = await _dbContext.Accounts
-            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(a =>
+                a.Id == id &&
+                a.CompanyId == companyId,
+                cancellationToken);
 
         if (account is null)
-            return NotFound();
-
-        if (account.CompanyId != companyId)
             return NotFound();
 
         if (account.Role == "Owner")
@@ -253,16 +254,21 @@ public sealed class AccountsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ChangeMyPassword(
-        [FromQuery] Guid accountId,
         [FromBody] ChangeMyPasswordRequest request,
         CancellationToken cancellationToken)
     {
-        if (accountId == Guid.Empty)
-            return BadRequest("accountId is required.");
+        var companyId = GetCompanyId();
+        var accountId = GetAccountId();
+        if (companyId == Guid.Empty || accountId == Guid.Empty)
+            return Unauthorized();
 
         var account = await _dbContext.Accounts
-            .FirstOrDefaultAsync(a => a.Id == accountId, cancellationToken);
+            .FirstOrDefaultAsync(a =>
+                a.Id == accountId &&
+                a.CompanyId == companyId,
+                cancellationToken);
 
         if (account is null || account.DeletedAt != null)
             return NotFound();
@@ -281,14 +287,14 @@ public sealed class AccountsController : ControllerBase
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<AccountResponse>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<IReadOnlyList<AccountResponse>>> GetAll(
-        [FromQuery] Guid companyId,
         CancellationToken cancellationToken)
     {
+        var companyId = GetCompanyId();
         if (companyId == Guid.Empty)
         {
-            return BadRequest("companyId is required.");
+            return Unauthorized();
         }
 
         var accounts = await _dbContext.Accounts
@@ -305,6 +311,18 @@ public sealed class AccountsController : ControllerBase
             .AsReadOnly();
 
         return Ok(response);
+    }
+
+    private Guid GetCompanyId()
+    {
+        var companyIdClaim = User.FindFirst("company_id")?.Value;
+        return Guid.TryParse(companyIdClaim, out var companyId) ? companyId : Guid.Empty;
+    }
+
+    private Guid GetAccountId()
+    {
+        var accountIdClaim = User.FindFirst("account_id")?.Value;
+        return Guid.TryParse(accountIdClaim, out var accountId) ? accountId : Guid.Empty;
     }
 }
 
