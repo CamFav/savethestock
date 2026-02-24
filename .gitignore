@@ -28,6 +28,17 @@ out/
 *.cache
 *.pdb
 *.mdb
+**/bin/
+**/obj/
+**/out/
+**/Debug/
+**/Release/
+*.user
+*.suo
+*.cache
+*.pdb
+*.mdb
+*.sln.docstates
 
 # Rider / VSCode
 .vscode/
