@@ -7,9 +7,12 @@ using SaveTheStock.Application.Common.Interfaces;
 using SaveTheStock.Api.Services;
 using SaveTheStock.Application.Options;
 using SaveTheStock.Application.Common.Security;
+using SaveTheStock.Infrastructure.Authentication;
 using SaveTheStock.Domain.Entities;
 using SaveTheStock.Infrastructure.Persistence;
 using System.Text;
+using SaveTheStock.Application.Accounts.InviteAccount;
+using SaveTheStock.Application.Authentication.Login;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +62,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<SaveTheStock.Application.Authentication.IJwtTokenGenerator, SaveTheStock.Infrastructure.Authentication.JwtTokenGenerator>();
 builder.Services.AddScoped<IPasswordHasher<Account>, PasswordHasher<Account>>();
 
+builder.Services.AddScoped<IPasswordService, PasswordService>();
+
 // http context accessor
 builder.Services.AddHttpContextAccessor();
 
@@ -99,6 +104,13 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy(AuthorizationPolicies.OwnerOnly, policy =>
         policy.RequireRole("Owner"));
 });
+
+// application services
+builder.Services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+
+// use cases
+builder.Services.AddScoped<InviteAccountUseCase>();
+builder.Services.AddScoped<LoginUseCase>();
 
 // builds the app
 var app = builder.Build();

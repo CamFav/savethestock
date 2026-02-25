@@ -38,8 +38,7 @@ public sealed class ChangePasswordTests : IClassFixture<SaveTheStockApiFactory>
             tempPassword,
             useTemporaryPassword: true);
 
-        var initialLogin = await AccountsAuthTestHelper.AuthenticateAsync(_client, ownerEmail, tempPassword);
-        Assert.True(initialLogin.MustChangePassword);
+        await AccountsAuthTestHelper.AuthenticateAsync(_client, ownerEmail, tempPassword);
 
         var response = await _client.PutAsJsonAsync(
             "/api/accounts/me/password",
@@ -57,6 +56,6 @@ public sealed class ChangePasswordTests : IClassFixture<SaveTheStockApiFactory>
 
         var payload = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
         Assert.NotNull(payload);
-        Assert.False(payload!.MustChangePassword);
+        Assert.False(string.IsNullOrWhiteSpace(payload!.JwtToken));
     }
 }

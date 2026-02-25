@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using SaveTheStock.Api.Contracts.Auth;
 using SaveTheStock.Api.Contracts.Companies;
+using SaveTheStock.Application.Common.Utilities;
+using SaveTheStock.Application.Authentication;
 using SaveTheStock.Domain.Entities;
 using SaveTheStock.Infrastructure.Persistence;
 using Xunit;
@@ -53,7 +55,7 @@ internal static class AccountsAuthTestHelper
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var accountId = Guid.NewGuid();
-        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var normalizedEmail = EmailNormalizer.Normalize(email) ?? string.Empty;
 
         var account = new Account
         {
@@ -70,7 +72,7 @@ internal static class AccountsAuthTestHelper
         var hasher = new PasswordHasher<Account>();
         var hashedPassword = hasher.HashPassword(account, password);
         account.PasswordHash = useTemporaryPassword
-            ? $"TEMP:{hashedPassword}"
+            ? TemporaryPassword.Prefix + hashedPassword
             : hashedPassword;
 
         dbContext.Accounts.Add(account);
@@ -102,7 +104,7 @@ internal static class AccountsAuthTestHelper
     public static async Task<LoginResponse> AuthenticateAsync(HttpClient client, string email, string password)
     {
         var payload = await LoginAsync(client, email, password);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", payload.AccessToken);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", payload.JwtToken);
         return payload;
     }
 }

@@ -23,10 +23,11 @@ public sealed class LoginTests : IClassFixture<SaveTheStockApiFactory>
     }
 
     [Fact]
-    public async Task Login_ShouldAuthenticateWithoutCompanyId_AndIncludeClaims()
+    public async Task Login_ShouldReturnJwt_WhenCredentialsAreValid()
     {
         var email = $"member-{Guid.NewGuid():N}@test.com";
         const string password = "NewSecurePassword123!";
+        const string displayName = "Member";
 
         var company = await AccountsAuthTestHelper.CreateCompanyAsync(_client, "Auth Company");
 
@@ -34,7 +35,7 @@ public sealed class LoginTests : IClassFixture<SaveTheStockApiFactory>
             _factory,
             company.Id,
             email,
-            "Member",
+            displayName,
             "Member",
             password);
 
@@ -46,16 +47,43 @@ public sealed class LoginTests : IClassFixture<SaveTheStockApiFactory>
 
         var payload = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
         Assert.NotNull(payload);
-        Assert.False(payload!.MustChangePassword);
-        Assert.False(string.IsNullOrWhiteSpace(payload.AccessToken));
+        Assert.False(string.IsNullOrWhiteSpace(payload!.JwtToken));
+        Assert.Equal(accountId, payload.AccountId);
+        Assert.Equal(company.Id, payload.CompanyId);
+        Assert.Equal("Member", payload.Role);
+        Assert.Equal(displayName, payload.DisplayName);
 
-        var token = new JwtSecurityTokenHandler().ReadJwtToken(payload.AccessToken);
+        var token = new JwtSecurityTokenHandler().ReadJwtToken(payload.JwtToken);
 
         Assert.Contains(token.Claims, c => c.Type == "account_id" && c.Value == accountId.ToString());
         Assert.Contains(token.Claims, c => c.Type == "company_id" && c.Value == company.Id.ToString());
         Assert.Contains(token.Claims, c =>
             (c.Type == ClaimTypes.Role || c.Type == "role") &&
             c.Value == "Member");
+    }
+
+    [Fact]
+    public async Task Login_ShouldReturnUnauthorized_WhenPasswordIsInvalid()
+    {
+        var email = $"wrong-pass-{Guid.NewGuid():N}@test.com";
+        const string password = "NewSecurePassword123!";
+        const string wrongPassword = "WrongPassword123!";
+
+        var company = await AccountsAuthTestHelper.CreateCompanyAsync(_client, "Wrong Password Company");
+
+        await AccountsAuthTestHelper.SeedAccountAsync(
+            _factory,
+            company.Id,
+            email,
+            "Member",
+            "Member",
+            password);
+
+        var loginResponse = await _client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(email, wrongPassword));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, loginResponse.StatusCode);
     }
 
     [Fact]
