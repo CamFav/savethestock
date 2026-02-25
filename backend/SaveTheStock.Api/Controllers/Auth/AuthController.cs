@@ -62,6 +62,11 @@ public sealed class AuthController : ControllerBase
         var mustChangePassword = false;
         var storedPasswordHash = account.PasswordHash;
 
+        if (string.IsNullOrWhiteSpace(storedPasswordHash))
+        {
+            return Unauthorized();
+        }
+
         if (storedPasswordHash.StartsWith(TempPasswordPrefix, StringComparison.Ordinal))
         {
             mustChangePassword = true;
