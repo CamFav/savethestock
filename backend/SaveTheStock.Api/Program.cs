@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using SaveTheStock.Application.Common.Interfaces;
+using SaveTheStock.Api.Services;
 using SaveTheStock.Application.Options;
 using SaveTheStock.Domain.Entities;
 using SaveTheStock.Infrastructure.Persistence;
@@ -52,9 +54,15 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 
-// 
+// authentication services
 builder.Services.AddScoped<SaveTheStock.Application.Authentication.IJwtTokenGenerator, SaveTheStock.Infrastructure.Authentication.JwtTokenGenerator>();
 builder.Services.AddScoped<IPasswordHasher<Account>, PasswordHasher<Account>>();
+
+// http context accessor
+builder.Services.AddHttpContextAccessor();
+
+// current user accessor
+builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 
 var jwt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
           ?? throw new InvalidOperationException("Jwt section missing");
