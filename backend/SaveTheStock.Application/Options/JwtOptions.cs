@@ -1,5 +1,8 @@
 namespace SaveTheStock.Application.Options;
 
+/// <summary>
+/// Represents the configuration options for JWT (JSON Web Token) authentication in the application.
+/// </summary>
 public sealed class JwtOptions
 {
     public string Issuer { get; init; } = default!;
