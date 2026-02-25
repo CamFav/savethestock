@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SaveTheStock.Api.Contracts.Accounts;
 using SaveTheStock.Infrastructure.Persistence;
 using SaveTheStock.Domain.Entities;
+using SaveTheStock.Application.Common.Interfaces;
 using System.Security.Cryptography;
 
 namespace SaveTheStock.Api.Controllers.Accounts;
@@ -19,10 +20,16 @@ public sealed class AccountsController : ControllerBase
     private readonly AppDbContext _dbContext;
     private readonly IPasswordHasher<Account> _passwordHasher;
 
-    public AccountsController(AppDbContext dbContext)
+    private readonly ICurrentUser _currentUser;
+
+    public AccountsController(
+        AppDbContext dbContext,
+        IPasswordHasher<Account> passwordHasher,
+        ICurrentUser currentUser)
     {
         _dbContext = dbContext;
-        _passwordHasher = new PasswordHasher<Account>();
+        _passwordHasher = passwordHasher;
+        _currentUser = currentUser;
     }
 
     /// <summary>
@@ -36,8 +43,8 @@ public sealed class AccountsController : ControllerBase
         [FromBody] InviteAccountRequest request,
         CancellationToken cancellationToken)
     {
-        var companyId = GetCompanyId();
-        if (companyId == Guid.Empty)
+        var companyId = _currentUser.CompanyId;
+        if (companyId is null)
         {
             return Unauthorized();
         }
@@ -60,7 +67,7 @@ public sealed class AccountsController : ControllerBase
         var account = new Account
         {
             Id = Guid.NewGuid(),
-            CompanyId = companyId,
+            CompanyId = companyId.Value,
             Email = normalizedEmail,
             DisplayName = request.DisplayName.Trim(),
             Role = "Member",
@@ -94,15 +101,15 @@ public sealed class AccountsController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var companyId = GetCompanyId();
-        if (companyId == Guid.Empty)
+        var companyId = _currentUser.CompanyId;
+        if (companyId is null)
             return Unauthorized();
 
         var account = await _dbContext.Accounts
             .AsNoTracking()
             .FirstOrDefaultAsync(a =>
                 a.Id == id &&
-                a.CompanyId == companyId &&
+                a.CompanyId == companyId.Value &&
                 a.DeletedAt == null,
                 cancellationToken);
 
@@ -160,14 +167,14 @@ public sealed class AccountsController : ControllerBase
         [FromBody] UpdateAccountRequest request,
         CancellationToken cancellationToken)
     {
-        var companyId = GetCompanyId();
-        if (companyId == Guid.Empty)
+        var companyId = _currentUser.CompanyId;
+        if (companyId is null)
             return Unauthorized();
 
         var account = await _dbContext.Accounts
             .FirstOrDefaultAsync(a =>
                 a.Id == id &&
-                a.CompanyId == companyId,
+                a.CompanyId == companyId.Value,
                 cancellationToken);
 
         if (account is null)
@@ -220,14 +227,14 @@ public sealed class AccountsController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var companyId = GetCompanyId();
-        if (companyId == Guid.Empty)
+        var companyId = _currentUser.CompanyId;
+        if (companyId is null)
             return Unauthorized();
 
         var account = await _dbContext.Accounts
             .FirstOrDefaultAsync(a =>
                 a.Id == id &&
-                a.CompanyId == companyId,
+                a.CompanyId == companyId.Value,
                 cancellationToken);
 
         if (account is null)
@@ -259,15 +266,15 @@ public sealed class AccountsController : ControllerBase
         [FromBody] ChangeMyPasswordRequest request,
         CancellationToken cancellationToken)
     {
-        var companyId = GetCompanyId();
-        var accountId = GetAccountId();
-        if (companyId == Guid.Empty || accountId == Guid.Empty)
+        var companyId = _currentUser.CompanyId;
+        var accountId = _currentUser.AccountId;
+        if (companyId is null || accountId is null)
             return Unauthorized();
 
         var account = await _dbContext.Accounts
             .FirstOrDefaultAsync(a =>
-                a.Id == accountId &&
-                a.CompanyId == companyId,
+                a.Id == accountId.Value &&
+                a.CompanyId == companyId.Value,
                 cancellationToken);
 
         if (account is null || account.DeletedAt != null)
@@ -291,8 +298,8 @@ public sealed class AccountsController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<AccountResponse>>> GetAll(
         CancellationToken cancellationToken)
     {
-        var companyId = GetCompanyId();
-        if (companyId == Guid.Empty)
+        var companyId = _currentUser.CompanyId;
+        if (companyId is null)
         {
             return Unauthorized();
         }
@@ -300,7 +307,7 @@ public sealed class AccountsController : ControllerBase
         var accounts = await _dbContext.Accounts
             .AsNoTracking()
             .Where(a =>
-                a.CompanyId == companyId &&
+                a.CompanyId == companyId.Value &&
                 a.DeletedAt == null)
             .OrderBy(a => a.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -311,18 +318,6 @@ public sealed class AccountsController : ControllerBase
             .AsReadOnly();
 
         return Ok(response);
-    }
-
-    private Guid GetCompanyId()
-    {
-        var companyIdClaim = User.FindFirst("company_id")?.Value;
-        return Guid.TryParse(companyIdClaim, out var companyId) ? companyId : Guid.Empty;
-    }
-
-    private Guid GetAccountId()
-    {
-        var accountIdClaim = User.FindFirst("account_id")?.Value;
-        return Guid.TryParse(accountIdClaim, out var accountId) ? accountId : Guid.Empty;
     }
 }
 
