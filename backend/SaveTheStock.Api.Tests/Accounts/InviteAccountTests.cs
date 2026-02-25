@@ -111,4 +111,32 @@ public sealed class InviteAccountTests : IClassFixture<SaveTheStockApiFactory>
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Invite_WhenMember_ShouldReturn403()
+    {
+        // Arrange
+        var company = await AccountsAuthTestHelper.CreateCompanyAsync(_client, "Company 403");
+
+        const string memberPassword = "MemberPassword123!";
+        const string memberEmail = "member403@test.com";
+
+        await AccountsAuthTestHelper.SeedAccountAsync(
+            _factory,
+            company.Id,
+            memberEmail,
+            "Member 403",
+            "Member",
+            memberPassword);
+
+        await AccountsAuthTestHelper.AuthenticateAsync(_client, memberEmail, memberPassword);
+
+        // Act
+        var response = await _client.PostAsJsonAsync(
+            "/api/accounts/invite",
+            new InviteAccountRequest("newuser@test.com", "New User"));
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
 }
