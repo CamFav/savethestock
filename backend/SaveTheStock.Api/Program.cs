@@ -6,6 +6,7 @@ using Microsoft.OpenApi.Models;
 using SaveTheStock.Application.Common.Interfaces;
 using SaveTheStock.Api.Services;
 using SaveTheStock.Application.Options;
+using SaveTheStock.Application.Common.Security;
 using SaveTheStock.Domain.Entities;
 using SaveTheStock.Infrastructure.Persistence;
 using System.Text;
@@ -91,7 +92,11 @@ builder.Services
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AuthorizationPolicies.OwnerOnly, policy =>
+        policy.RequireRole("Owner"));
+});
 
 // builds the app
 var app = builder.Build();
