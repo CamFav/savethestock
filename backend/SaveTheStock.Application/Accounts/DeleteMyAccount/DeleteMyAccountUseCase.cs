@@ -3,7 +3,7 @@ using SaveTheStock.Application.Common.Interfaces;
 namespace SaveTheStock.Application.Accounts.DeleteMyAccount;
 
 /// <summary>
-/// UseCase to delete (soft delete + RGPD anonymization) the authenticated user's account.
+/// UseCase to delete the authenticated user's account.
 /// </summary>
 public sealed class DeleteMyAccountUseCase
 {
@@ -19,7 +19,7 @@ public sealed class DeleteMyAccountUseCase
     }
 
     /// <summary>
-    /// Deletes the authenticated user's account with RGPD anonymization.
+    /// Deletes the authenticated user's account with anonymization.
     /// Performs soft delete (IsActive = false, DeletedAt = now) and anonymizes personal data.
     /// </summary>
     public async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -35,7 +35,7 @@ public sealed class DeleteMyAccountUseCase
         if (account is null || account.DeletedAt != null)
             throw new UnauthorizedAccessException("Account not found or already deleted.");
 
-        // RGPD: Soft delete + anonymization
+        // Soft delete + anonymization
         account.IsActive = false;
         account.DeletedAt = DateTime.UtcNow;
         account.DisplayName = "Deleted User";

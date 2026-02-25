@@ -6,6 +6,10 @@ using System.Security.Cryptography;
 
 namespace SaveTheStock.Application.Accounts.InviteAccount;
 
+/// <summary>
+/// Use case for inviting a new account to the company.
+/// Generates a temporary password and saves the new account with it.
+/// </summary>
 public sealed class InviteAccountUseCase
 {
     private readonly IAppDbContext _db;

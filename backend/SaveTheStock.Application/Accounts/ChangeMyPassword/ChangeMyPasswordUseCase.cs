@@ -42,7 +42,6 @@ public sealed class ChangeMyPasswordUseCase
         // Hash the new password
         var newHash = _passwordService.HashPassword(account, input.NewPassword);
 
-        // Set new password (no need to strip TEMP prefix, new hash won't have it)
         account.PasswordHash = newHash;
 
         await _db.SaveChangesAsync(cancellationToken);
