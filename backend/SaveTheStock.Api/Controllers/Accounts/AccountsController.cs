@@ -7,7 +7,9 @@ using SaveTheStock.Infrastructure.Persistence;
 using SaveTheStock.Domain.Entities;
 using SaveTheStock.Application.Common.Interfaces;
 using SaveTheStock.Application.Common.Security;
+using SaveTheStock.Application.Authentication;
 using System.Security.Cryptography;
+using SaveTheStock.Application.Accounts.InviteAccount;
 
 namespace SaveTheStock.Api.Controllers.Accounts;
 
@@ -21,21 +23,23 @@ namespace SaveTheStock.Api.Controllers.Accounts;
 [Authorize]
 public sealed class AccountsController : ControllerBase
 {
-    private const string TempPasswordPrefix = "TEMP:";
-
     private readonly AppDbContext _dbContext;
     private readonly IPasswordHasher<Account> _passwordHasher;
 
     private readonly ICurrentUser _currentUser;
 
+    private readonly InviteAccountUseCase _inviteAccount;
+
     public AccountsController(
         AppDbContext dbContext,
         IPasswordHasher<Account> passwordHasher,
-        ICurrentUser currentUser)
+        ICurrentUser currentUser,
+        InviteAccountUseCase inviteAccount)
     {
         _dbContext = dbContext;
         _passwordHasher = passwordHasher;
         _currentUser = currentUser;
+        _inviteAccount = inviteAccount;
     }
 
     /// <summary>
@@ -50,51 +54,27 @@ public sealed class AccountsController : ControllerBase
         [FromBody] InviteAccountRequest request,
         CancellationToken cancellationToken)
     {
-        var companyId = _currentUser.CompanyId;
-        if (companyId is null)
+        try
+        {
+            var account = await _inviteAccount.ExecuteAsync(
+                new InviteAccountCommand(request.Email, request.DisplayName),
+                cancellationToken);
+
+            var response = ToResponse(account);
+
+            return CreatedAtAction(
+                actionName: nameof(GetById),
+                routeValues: new { id = account.Id },
+                value: response);
+        }
+        catch (UnauthorizedAccessException)
         {
             return Unauthorized();
         }
-
-        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
-
-        var emailAlreadyUsed = await _dbContext.Accounts
-            .AsNoTracking()
-            .AnyAsync(a =>
-                a.Email.ToLower() == normalizedEmail,
-                cancellationToken);
-
-        if (emailAlreadyUsed)
+        catch (InvalidOperationException ex)
         {
-            return BadRequest("An account with this email already exists.");
+            return BadRequest(ex.Message);
         }
-
-        var temporaryPassword = GenerateTemporaryPassword(24);
-
-        var account = new Account
-        {
-            Id = Guid.NewGuid(),
-            CompanyId = companyId.Value,
-            Email = normalizedEmail,
-            DisplayName = request.DisplayName.Trim(),
-            Role = "Member",
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            DeletedAt = null
-        };
-
-        var hashed = _passwordHasher.HashPassword(account, temporaryPassword);
-        account.PasswordHash = $"{TempPasswordPrefix}{hashed}";
-
-        _dbContext.Accounts.Add(account);
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        var response = ToResponse(account);
-
-        return CreatedAtAction(
-            actionName: nameof(GetById),
-            routeValues: new { id = account.Id },
-            value: response);
     }
 
     /// <summary>
@@ -131,7 +111,7 @@ public sealed class AccountsController : ControllerBase
     {
         var mustChangePassword =
             account.PasswordHash != null &&
-            account.PasswordHash.StartsWith(TempPasswordPrefix, StringComparison.Ordinal);
+            account.PasswordHash.StartsWith(TemporaryPassword.Prefix, StringComparison.Ordinal);
 
         return new AccountResponse(
             account.Id,
