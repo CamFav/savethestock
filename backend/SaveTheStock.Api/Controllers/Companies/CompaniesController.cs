@@ -1,8 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SaveTheStock.Domain.Entities;
 using SaveTheStock.Infrastructure.Persistence;
 using SaveTheStock.Api.Contracts.Companies;
+using SaveTheStock.Application.Common.Interfaces;
+using SaveTheStock.Application.Common.Security;
 
 namespace SaveTheStock.Api.Controllers;
 
@@ -14,10 +17,14 @@ namespace SaveTheStock.Api.Controllers;
 public class CompaniesController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
+    private readonly ICurrentUser _currentUser;
 
-    public CompaniesController(AppDbContext dbContext)
+    public CompaniesController(
+        AppDbContext dbContext,
+        ICurrentUser currentUser)
     {
         _dbContext = dbContext;
+        _currentUser = currentUser;
     }
 
     private static CompanyResponse MapToResponse(Company company)
@@ -31,27 +38,30 @@ public class CompaniesController : ControllerBase
     }
 
     /// <summary>
-    /// [GET] Retrieves all companies.
+    /// [GET] Company enumeration is disabled.
     /// </summary>
+    [Authorize]
     [HttpGet]
-    public async Task<ActionResult<List<CompanyResponse>>> GetCompanies(CancellationToken cancellationToken)
+    public ActionResult<List<CompanyResponse>> GetCompanies()
     {
-        var companies = await _dbContext.Companies
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-
-        var response = companies.Select(MapToResponse).ToList();
-
-        return Ok(response);
+        return Forbid();
     }
 
 
     /// <summary>
     /// [GET] Retrieves a company by its ID.
     /// </summary>
+    [Authorize]
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<CompanyResponse>> GetCompanyById(Guid id, CancellationToken cancellationToken)
     {
+        var companyId = _currentUser.CompanyId;
+        if (companyId is null)
+            return Unauthorized();
+
+        if (id != companyId.Value)
+            return NotFound();
+
         var company = await _dbContext.Companies
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
@@ -92,12 +102,20 @@ public class CompaniesController : ControllerBase
     /// <summary>
     /// [PUT] Updates an existing company.
     /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<CompanyResponse>> UpdateCompany(
         Guid id,
         [FromBody] UpdateCompanyRequest request,
         CancellationToken cancellationToken)
     {
+        var companyId = _currentUser.CompanyId;
+        if (companyId is null)
+            return Unauthorized();
+
+        if (id != companyId.Value)
+            return NotFound();
+
         if (string.IsNullOrWhiteSpace(request.Name))
             return BadRequest("Company name is required.");
 
