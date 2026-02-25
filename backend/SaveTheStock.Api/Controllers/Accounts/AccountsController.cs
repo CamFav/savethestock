@@ -10,6 +10,8 @@ using SaveTheStock.Application.Common.Security;
 using SaveTheStock.Application.Authentication;
 using System.Security.Cryptography;
 using SaveTheStock.Application.Accounts.InviteAccount;
+using SaveTheStock.Application.Accounts.ChangeMyPassword;
+using SaveTheStock.Application.Accounts.DeleteMyAccount;
 
 namespace SaveTheStock.Api.Controllers.Accounts;
 
@@ -29,17 +31,23 @@ public sealed class AccountsController : ControllerBase
     private readonly ICurrentUser _currentUser;
 
     private readonly InviteAccountUseCase _inviteAccount;
+    private readonly ChangeMyPasswordUseCase _changeMyPassword;
+    private readonly DeleteMyAccountUseCase _deleteMyAccount;
 
     public AccountsController(
         AppDbContext dbContext,
         IPasswordHasher<Account> passwordHasher,
         ICurrentUser currentUser,
-        InviteAccountUseCase inviteAccount)
+        InviteAccountUseCase inviteAccount,
+        ChangeMyPasswordUseCase changeMyPassword,
+        DeleteMyAccountUseCase deleteMyAccount)
     {
         _dbContext = dbContext;
         _passwordHasher = passwordHasher;
         _currentUser = currentUser;
         _inviteAccount = inviteAccount;
+        _changeMyPassword = changeMyPassword;
+        _deleteMyAccount = deleteMyAccount;
     }
 
     /// <summary>
@@ -256,27 +264,18 @@ public sealed class AccountsController : ControllerBase
         [FromBody] ChangeMyPasswordRequest request,
         CancellationToken cancellationToken)
     {
-        var companyId = _currentUser.CompanyId;
-        var accountId = _currentUser.AccountId;
-        if (companyId is null || accountId is null)
-            return Unauthorized();
-
-        var account = await _dbContext.Accounts
-            .FirstOrDefaultAsync(a =>
-                a.Id == accountId.Value &&
-                a.CompanyId == companyId.Value,
+        try
+        {
+            await _changeMyPassword.ExecuteAsync(
+                new ChangeMyPasswordInput(request.NewPassword),
                 cancellationToken);
 
-        if (account is null || account.DeletedAt != null)
-            return NotFound();
-
-        var hashed = _passwordHasher.HashPassword(account, request.NewPassword);
-
-        account.PasswordHash = hashed;
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        return NoContent();
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
     }
 
     /// <summary>
@@ -320,35 +319,15 @@ public sealed class AccountsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteMyAccount(CancellationToken cancellationToken)
     {
-        var companyId = _currentUser.CompanyId;
-        var accountId = _currentUser.AccountId;
-
-        if (companyId is null || accountId is null)
+        try
+        {
+            await _deleteMyAccount.ExecuteAsync(cancellationToken);
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException)
+        {
             return Unauthorized();
-
-        var account = await _dbContext.Accounts
-            .FirstOrDefaultAsync(a =>
-                a.Id == accountId.Value &&
-                a.CompanyId == companyId.Value,
-                cancellationToken);
-
-        if (account is null || account.DeletedAt != null)
-            return NotFound();
-
-        // soft delete
-        account.IsActive = false;
-        account.DeletedAt = DateTime.UtcNow;
-
-        // rgpd anonymization
-        account.DisplayName = "Deleted User";
-        account.Email = $"deleted-{account.Id}@example.invalid";
-
-        // note: invalidate password hash
-        // account.PasswordHash = null;
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        return NoContent();
+        }
     }
 }
 

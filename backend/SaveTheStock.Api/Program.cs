@@ -12,6 +12,8 @@ using SaveTheStock.Domain.Entities;
 using SaveTheStock.Infrastructure.Persistence;
 using System.Text;
 using SaveTheStock.Application.Accounts.InviteAccount;
+using SaveTheStock.Application.Accounts.ChangeMyPassword;
+using SaveTheStock.Application.Accounts.DeleteMyAccount;
 using SaveTheStock.Application.Authentication.Login;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -110,6 +112,8 @@ builder.Services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbConte
 
 // use cases
 builder.Services.AddScoped<InviteAccountUseCase>();
+builder.Services.AddScoped<ChangeMyPasswordUseCase>();
+builder.Services.AddScoped<DeleteMyAccountUseCase>();
 builder.Services.AddScoped<LoginUseCase>();
 
 // builds the app
