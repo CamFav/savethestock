@@ -72,6 +72,7 @@ if (string.IsNullOrWhiteSpace(jwt.Issuer)) throw new InvalidOperationException("
 if (string.IsNullOrWhiteSpace(jwt.Audience)) throw new InvalidOperationException("Jwt:Audience missing");
 if (string.IsNullOrWhiteSpace(jwt.Secret)) throw new InvalidOperationException("Jwt:Secret missing");
 
+// authentication configuration
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -92,6 +93,7 @@ builder.Services
         };
     });
 
+// authorization policies
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(AuthorizationPolicies.OwnerOnly, policy =>

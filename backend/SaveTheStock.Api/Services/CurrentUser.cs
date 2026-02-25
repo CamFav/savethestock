@@ -4,6 +4,11 @@ using SaveTheStock.Application.Common.Security;
 
 namespace SaveTheStock.Api.Services;
 
+/// <summary>
+/// Implements the ICurrentUser interface to provide information about the currently authenticated user
+/// based on the claims present in the HTTP context. This service allows other parts of the application
+/// to access user-specific information such as account ID, company ID, and role.
+/// </summary>
 public sealed class CurrentUser : ICurrentUser
 {
     private readonly IHttpContextAccessor _http;

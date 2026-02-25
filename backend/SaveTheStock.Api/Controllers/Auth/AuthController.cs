@@ -9,6 +9,10 @@ using SaveTheStock.Infrastructure.Persistence;
 
 namespace SaveTheStock.Api.Controllers.Auth;
 
+/// <summary>
+/// Controller responsible for handling authentication-related actions,
+/// such as logging in users and generating JWT tokens for authenticated sessions.
+/// </summary>
 [ApiController]
 [Route("api/auth")]
 public sealed class AuthController : ControllerBase

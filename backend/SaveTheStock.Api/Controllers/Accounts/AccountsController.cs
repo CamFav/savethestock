@@ -11,6 +11,11 @@ using System.Security.Cryptography;
 
 namespace SaveTheStock.Api.Controllers.Accounts;
 
+/// <summary>
+/// Controller responsible for managing accounts within a company, 
+/// including inviting new accounts, updating account details, soft deleting accounts, 
+/// changing passwords, and retrieving account information.
+/// </summary>
 [ApiController]
 [Route("api/accounts")]
 [Authorize]
