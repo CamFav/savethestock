@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using SaveTheStock.Application.Auth;
+using SaveTheStock.Application.Common.Security;
 using SaveTheStock.Application.Options;
 using SaveTheStock.Application.Authentication;
 using System.IdentityModel.Tokens.Jwt;
