@@ -6,6 +6,7 @@ using SaveTheStock.Api.Contracts.Accounts;
 using SaveTheStock.Infrastructure.Persistence;
 using SaveTheStock.Domain.Entities;
 using SaveTheStock.Application.Common.Interfaces;
+using SaveTheStock.Application.Common.Security;
 using System.Security.Cryptography;
 
 namespace SaveTheStock.Api.Controllers.Accounts;
@@ -35,6 +36,7 @@ public sealed class AccountsController : ControllerBase
     /// <summary>
     /// [POST] Invites a new account to a company.
     /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
     [HttpPost("invite")]
     [ProducesResponseType(typeof(AccountResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -93,6 +95,7 @@ public sealed class AccountsController : ControllerBase
     /// <summary>
     /// [GET] Retrieves an account by id.
     /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(AccountResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -157,6 +160,7 @@ public sealed class AccountsController : ControllerBase
     /// <summary>
     /// [PUT] Updates an account.
     /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -218,6 +222,7 @@ public sealed class AccountsController : ControllerBase
     /// <summary>
     /// [DELETE] Soft deletes an account.
     /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -292,6 +297,7 @@ public sealed class AccountsController : ControllerBase
     /// <summary>
     /// [GET] Retrieves all accounts.
     /// </summary>
+    [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<AccountResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
