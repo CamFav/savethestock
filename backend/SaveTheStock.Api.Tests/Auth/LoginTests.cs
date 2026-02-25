@@ -8,6 +8,9 @@ using Xunit;
 
 namespace SaveTheStock.Api.Tests.Auth;
 
+/// <summary>
+/// Tests for the POST /api/auth/login endpoint.
+/// </summary>
 public sealed class LoginTests : IClassFixture<SaveTheStockApiFactory>
 {
     private readonly HttpClient _client;

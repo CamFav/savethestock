@@ -4,10 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using SaveTheStock.Api.Contracts.Auth;
 using SaveTheStock.Api.Tests.Testing;
 using SaveTheStock.Infrastructure.Persistence;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace SaveTheStock.Api.Tests.Accounts;
 
+/// <summary>
+/// Tests for the DELETE /api/accounts/me endpoint.
+/// </summary>
 public sealed class DeleteMyAccountTests : IClassFixture<SaveTheStockApiFactory>
 {
     private readonly HttpClient _client;

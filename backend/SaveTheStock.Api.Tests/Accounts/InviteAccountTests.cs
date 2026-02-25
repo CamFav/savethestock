@@ -7,6 +7,9 @@ using Xunit;
 
 namespace SaveTheStock.Api.Tests.Accounts;
 
+/// <summary>
+/// Tests for the POST /api/accounts/invite endpoint.
+/// </summary>
 public sealed class InviteAccountTests : IClassFixture<SaveTheStockApiFactory>
 {
     private readonly HttpClient _client;

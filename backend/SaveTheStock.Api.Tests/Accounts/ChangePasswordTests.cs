@@ -7,6 +7,9 @@ using Xunit;
 
 namespace SaveTheStock.Api.Tests.Accounts;
 
+/// <summary>
+/// Tests for the PUT /api/accounts/me/password endpoint.
+/// </summary>
 public sealed class ChangePasswordTests : IClassFixture<SaveTheStockApiFactory>
 {
     private readonly HttpClient _client;

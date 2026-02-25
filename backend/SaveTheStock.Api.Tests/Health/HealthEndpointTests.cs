@@ -4,6 +4,9 @@ using Xunit;
 
 namespace SaveTheStock.Api.Tests.Health;
 
+/// <summary>
+/// Tests for the GET /health endpoint.
+/// </summary>
 public sealed class HealthEndpointTests : IClassFixture<SaveTheStockApiFactory>
 {
     private readonly HttpClient _client;

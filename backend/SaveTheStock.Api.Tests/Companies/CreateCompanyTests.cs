@@ -6,6 +6,9 @@ using Xunit;
 
 namespace SaveTheStock.Api.Tests.Companies;
 
+/// <summary>
+/// Tests for the POST /api/companies endpoint.
+/// </summary>
 public sealed class CreateCompanyTests : IClassFixture<SaveTheStockApiFactory>
 {
     private readonly HttpClient _client;

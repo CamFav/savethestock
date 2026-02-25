@@ -6,6 +6,9 @@ using Xunit;
 
 namespace SaveTheStock.Api.Tests.Accounts;
 
+/// <summary>
+/// Tests for the DELETE /api/accounts/{accountId} endpoint.
+/// </summary>
 public sealed class DeleteAccountTests : IClassFixture<SaveTheStockApiFactory>
 {
     private readonly HttpClient _client;
