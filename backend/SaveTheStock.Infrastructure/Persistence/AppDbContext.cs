@@ -42,4 +42,13 @@ public class AppDbContext : DbContext, IAppDbContext
                 a.Email == normalizedEmail,
                 cancellationToken);
     }
+
+    public Task<Account?> FindAccountByIdAndCompanyIdAsync(Guid accountId, Guid companyId, CancellationToken cancellationToken)
+    {
+        return Accounts
+            .FirstOrDefaultAsync(a =>
+                a.Id == accountId &&
+                a.CompanyId == companyId,
+                cancellationToken);
+    }
 }

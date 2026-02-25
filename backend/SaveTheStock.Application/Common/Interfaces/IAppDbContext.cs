@@ -11,6 +11,7 @@ public interface IAppDbContext
     void AddAccount(Account account);
 
     Task<Account?> FindActiveAccountByNormalizedEmailAsync(string normalizedEmail, CancellationToken cancellationToken);
+    Task<Account?> FindAccountByIdAndCompanyIdAsync(Guid accountId, Guid companyId, CancellationToken cancellationToken);
     Task<bool> AccountEmailExistsAsync(string normalizedEmail, CancellationToken cancellationToken);
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
