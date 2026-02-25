@@ -325,5 +325,45 @@ public sealed class AccountsController : ControllerBase
 
         return Ok(response);
     }
+
+    /// <summary>
+    /// [DELETE] Self delete account (soft delete + anonymization).
+    /// </summary>
+    [HttpDelete("me")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteMyAccount(CancellationToken cancellationToken)
+    {
+        var companyId = _currentUser.CompanyId;
+        var accountId = _currentUser.AccountId;
+
+        if (companyId is null || accountId is null)
+            return Unauthorized();
+
+        var account = await _dbContext.Accounts
+            .FirstOrDefaultAsync(a =>
+                a.Id == accountId.Value &&
+                a.CompanyId == companyId.Value,
+                cancellationToken);
+
+        if (account is null || account.DeletedAt != null)
+            return NotFound();
+
+        // soft delete
+        account.IsActive = false;
+        account.DeletedAt = DateTime.UtcNow;
+
+        // rgpd anonymization
+        account.DisplayName = "Deleted User";
+        account.Email = $"deleted-{account.Id}@example.invalid";
+
+        // note: invalidate password hash
+        // account.PasswordHash = null;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return NoContent();
+    }
 }
 
