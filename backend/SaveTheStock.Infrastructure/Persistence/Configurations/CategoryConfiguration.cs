@@ -16,6 +16,8 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
 
         builder.HasKey(x => x.Id);
 
+        builder.HasAlternateKey(c => new { c.CompanyId, c.Id });
+
         builder.Property(x => x.CompanyId)
             .IsRequired();
 
