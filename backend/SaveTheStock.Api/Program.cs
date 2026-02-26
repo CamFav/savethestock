@@ -58,7 +58,8 @@ builder.Services.AddSwaggerGen(c =>
 
 // postgresql database provider
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Default"))
+           .UseSnakeCaseNamingConvention());
 
 // authentication services
 builder.Services.AddScoped<SaveTheStock.Application.Authentication.IJwtTokenGenerator, SaveTheStock.Infrastructure.Authentication.JwtTokenGenerator>();
