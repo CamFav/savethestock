@@ -53,4 +53,148 @@ public class AppDbContext : DbContext, IAppDbContext
                 a.CompanyId == companyId,
                 cancellationToken);
     }
+
+    public void AddCategory(Category category)
+    {
+        Categories.Add(category);
+    }
+
+    public Task<Category?> FindCategoryByIdAndCompanyIdAsync(
+        Guid categoryId,
+        Guid companyId,
+        CancellationToken cancellationToken)
+    {
+        return Categories
+            .FirstOrDefaultAsync(c =>
+                c.Id == categoryId &&
+                c.CompanyId == companyId &&
+                c.DeletedAt == null,
+                cancellationToken);
+    }
+
+    public Task<bool> CategoryNameExistsAsync(
+        Guid companyId,
+        string normalizedName,
+        Guid? excludeCategoryId,
+        CancellationToken cancellationToken)
+    {
+        var query = Categories
+            .AsNoTracking()
+            .Where(c =>
+                c.CompanyId == companyId &&
+                c.DeletedAt == null &&
+                c.Name == normalizedName);
+
+        if (excludeCategoryId.HasValue)
+        {
+            query = query.Where(c => c.Id != excludeCategoryId.Value);
+        }
+
+        return query.AnyAsync(cancellationToken);
+    }
+
+    public async Task<(IReadOnlyList<Category> Items, int Total)> GetCategoriesPagedAsync(
+        Guid companyId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var baseQuery = Categories
+            .AsNoTracking()
+            .Where(c =>
+                c.CompanyId == companyId &&
+                c.DeletedAt == null);
+
+        var total = await baseQuery.CountAsync(cancellationToken);
+
+        var items = await baseQuery
+            .OrderBy(c => c.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, total);
+    }
+
+    public void AddProduct(Product product)
+    {
+        Products.Add(product);
+    }
+
+    public Task<Product?> FindProductByIdAndCompanyIdAsync(
+        Guid productId,
+        Guid companyId,
+        CancellationToken cancellationToken)
+    {
+        return Products
+            .FirstOrDefaultAsync(p =>
+                p.Id == productId &&
+                p.CompanyId == companyId &&
+                p.DeletedAt == null,
+                cancellationToken);
+    }
+
+    public Task<bool> ProductNameExistsAsync(
+        Guid companyId,
+        string normalizedName,
+        Guid? excludeProductId,
+        CancellationToken cancellationToken)
+    {
+        var query = Products
+            .AsNoTracking()
+            .Where(p =>
+                p.CompanyId == companyId &&
+                p.DeletedAt == null &&
+                p.Name == normalizedName);
+
+        if (excludeProductId.HasValue)
+        {
+            query = query.Where(p => p.Id != excludeProductId.Value);
+        }
+
+        return query.AnyAsync(cancellationToken);
+    }
+
+    public Task<bool> CategoryExistsForCompanyAsync(
+        Guid categoryId,
+        Guid companyId,
+        CancellationToken cancellationToken)
+    {
+        return Categories
+            .AsNoTracking()
+            .AnyAsync(c =>
+                c.Id == categoryId &&
+                c.CompanyId == companyId &&
+                c.DeletedAt == null,
+                cancellationToken);
+    }
+
+    public async Task<(IReadOnlyList<Product> Items, int Total)> GetProductsPagedAsync(
+        Guid companyId,
+        Guid? categoryId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var baseQuery = Products
+            .AsNoTracking()
+            .Where(p =>
+                p.CompanyId == companyId &&
+                p.DeletedAt == null);
+
+        if (categoryId.HasValue)
+        {
+            baseQuery = baseQuery.Where(p => p.CategoryId == categoryId.Value);
+        }
+
+        var total = await baseQuery.CountAsync(cancellationToken);
+
+        var items = await baseQuery
+            .OrderBy(p => p.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, total);
+    }
 }
