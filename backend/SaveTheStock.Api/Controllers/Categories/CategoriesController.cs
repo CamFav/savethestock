@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SaveTheStock.Api.Contracts.Categories;
 using SaveTheStock.Application.Catalog.Categories.Create;
+using SaveTheStock.Application.Catalog.Categories.Delete;
 using SaveTheStock.Application.Catalog.Categories.GetMyById;
 using SaveTheStock.Application.Catalog.Categories.GetMyListPaged;
 using SaveTheStock.Application.Catalog.Categories.Update;
@@ -21,17 +22,20 @@ public sealed class CategoriesController : ControllerBase
     private readonly GetMyCategoriesPagedUseCase _getPaged;
     private readonly GetMyCategoryByIdUseCase _getById;
     private readonly UpdateCategoryUseCase _update;
+    private readonly DeleteCategoryUseCase _delete;
 
     public CategoriesController(
         CreateCategoryUseCase create,
         GetMyCategoriesPagedUseCase getPaged,
         GetMyCategoryByIdUseCase getById,
-        UpdateCategoryUseCase update)
+        UpdateCategoryUseCase update,
+        DeleteCategoryUseCase delete)
     {
         _create = create;
         _getPaged = getPaged;
         _getById = getById;
         _update = update;
+        _delete = delete;
     }
 
     [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
@@ -165,6 +169,26 @@ public sealed class CategoriesController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return BadRequest(ex.Message);
+        }
+    }
+
+    [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> Delete(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _delete.ExecuteAsync(id, cancellationToken);
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
         }
     }
 }
