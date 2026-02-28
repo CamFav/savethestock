@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SaveTheStock.Api.Contracts.Categories;
 using SaveTheStock.Application.Catalog.Categories.Create;
+using SaveTheStock.Application.Catalog.Categories.GetMyById;
 using SaveTheStock.Application.Catalog.Categories.GetMyListPaged;
 using SaveTheStock.Application.Common.Security;
 
@@ -17,13 +18,16 @@ public sealed class CategoriesController : ControllerBase
 {
     private readonly CreateCategoryUseCase _create;
     private readonly GetMyCategoriesPagedUseCase _getPaged;
+    private readonly GetMyCategoryByIdUseCase _getById;
 
     public CategoriesController(
         CreateCategoryUseCase create,
-        GetMyCategoriesPagedUseCase getPaged)
+        GetMyCategoriesPagedUseCase getPaged,
+        GetMyCategoryByIdUseCase getById)
     {
         _create = create;
         _getPaged = getPaged;
+        _getById = getById;
     }
 
     [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
@@ -89,6 +93,34 @@ public sealed class CategoriesController : ControllerBase
         catch (UnauthorizedAccessException)
         {
             return Unauthorized();
+        }
+    }
+
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(CategoryResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<CategoryResponse>> GetById(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _getById.ExecuteAsync(id, cancellationToken);
+
+            return Ok(new CategoryResponse(
+                result.Id,
+                result.CompanyId,
+                result.Name,
+                result.CreatedAt));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "not_found")
+        {
+            return NotFound();
         }
     }
 }
