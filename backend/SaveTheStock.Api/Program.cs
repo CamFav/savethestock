@@ -15,6 +15,7 @@ using SaveTheStock.Application.Accounts.InviteAccount;
 using SaveTheStock.Application.Accounts.ChangeMyPassword;
 using SaveTheStock.Application.Accounts.DeleteMyAccount;
 using SaveTheStock.Application.Authentication.Login;
+using SaveTheStock.Application.Catalog.Categories.Create;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -72,6 +73,9 @@ builder.Services.AddHttpContextAccessor();
 
 // current user accessor
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
+
+// use cases
+builder.Services.AddScoped<CreateCategoryUseCase>();
 
 var jwt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
           ?? throw new InvalidOperationException("Jwt section missing");
