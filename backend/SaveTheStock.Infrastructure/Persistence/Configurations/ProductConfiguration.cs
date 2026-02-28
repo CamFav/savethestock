@@ -52,10 +52,5 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.HasQueryFilter(x => x.DeletedAt == null);
 
-        builder.HasOne(x => x.Category)
-            .WithMany(c => c.Products)
-            .HasForeignKey(x => new { x.CompanyId, x.CategoryId })
-            .HasPrincipalKey(c => new { c.CompanyId, c.Id })
-            .OnDelete(DeleteBehavior.Restrict);
     }
 }

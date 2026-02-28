@@ -38,9 +38,10 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
 
         builder.HasQueryFilter(x => x.DeletedAt == null);
 
-        builder.HasMany(x => x.Products)
+        builder.HasMany(c => c.Products)
             .WithOne(p => p.Category)
-            .HasForeignKey(p => p.CategoryId)
+            .HasForeignKey(p => new { p.CompanyId, p.CategoryId })
+            .HasPrincipalKey(c => new { c.CompanyId, c.Id })
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
