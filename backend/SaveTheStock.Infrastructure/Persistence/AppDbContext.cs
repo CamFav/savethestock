@@ -15,6 +15,8 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<Company> Companies => Set<Company>();
     public DbSet<Account> Accounts => Set<Account>();
+    public DbSet<Category> Categories => Set<Category>();
+    public DbSet<Product> Products => Set<Product>();
 
     public void AddAccount(Account account)
     {
