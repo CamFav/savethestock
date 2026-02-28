@@ -92,4 +92,37 @@ public sealed class CreateCategoryTests : IClassFixture<SaveTheStockApiFactory>
         // Assert
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Create_DuplicateName_ShouldReturn409()
+    {
+        // Arrange
+        var company = await AccountsAuthTestHelper.CreateCompanyAsync(_client, "Company Categories 409");
+
+        const string ownerPassword = "OwnerPassword123!";
+        const string ownerEmail = "owner-categories-409@test.com";
+
+        await AccountsAuthTestHelper.SeedAccountAsync(
+            _factory,
+            company.Id,
+            ownerEmail,
+            "Owner Categories 409",
+            "Owner",
+            ownerPassword);
+
+        await AccountsAuthTestHelper.AuthenticateAsync(_client, ownerEmail, ownerPassword);
+
+        // Act
+        var first = await _client.PostAsJsonAsync(
+            "/api/categories",
+            new CreateCategoryRequest("  Beverages  "));
+
+        var second = await _client.PostAsJsonAsync(
+            "/api/categories",
+            new CreateCategoryRequest("beverages"));
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Created, first.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+    }
 }
