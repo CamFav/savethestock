@@ -16,6 +16,7 @@ using SaveTheStock.Application.Accounts.ChangeMyPassword;
 using SaveTheStock.Application.Accounts.DeleteMyAccount;
 using SaveTheStock.Application.Authentication.Login;
 using SaveTheStock.Application.Catalog.Categories.Create;
+using SaveTheStock.Application.Catalog.Categories.GetMyListPaged;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -120,6 +121,7 @@ builder.Services.AddScoped<InviteAccountUseCase>();
 builder.Services.AddScoped<ChangeMyPasswordUseCase>();
 builder.Services.AddScoped<DeleteMyAccountUseCase>();
 builder.Services.AddScoped<LoginUseCase>();
+builder.Services.AddScoped<GetMyCategoriesPagedUseCase>();
 
 // builds the app
 var app = builder.Build();

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SaveTheStock.Api.Contracts.Categories;
 using SaveTheStock.Application.Catalog.Categories.Create;
+using SaveTheStock.Application.Catalog.Categories.GetMyListPaged;
 using SaveTheStock.Application.Common.Security;
 
 namespace SaveTheStock.Api.Controllers.Categories;
@@ -15,10 +16,14 @@ namespace SaveTheStock.Api.Controllers.Categories;
 public sealed class CategoriesController : ControllerBase
 {
     private readonly CreateCategoryUseCase _create;
+    private readonly GetMyCategoriesPagedUseCase _getPaged;
 
-    public CategoriesController(CreateCategoryUseCase create)
+    public CategoriesController(
+        CreateCategoryUseCase create,
+        GetMyCategoriesPagedUseCase getPaged)
     {
         _create = create;
+        _getPaged = getPaged;
     }
 
     [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
@@ -57,6 +62,33 @@ public sealed class CategoriesController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedCategoryResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<PagedCategoryResponse>> GetPaged(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var result = await _getPaged.ExecuteAsync(
+                new GetMyCategoriesPagedInput(page, pageSize),
+                cancellationToken);
+
+            var items = result.Items
+                .Select(i => new CategoryResponse(i.Id, i.CompanyId, i.Name, i.CreatedAt))
+                .ToList()
+                .AsReadOnly();
+
+            return Ok(new PagedCategoryResponse(items, result.Total, result.Page, result.PageSize));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
         }
     }
 }
