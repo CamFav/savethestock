@@ -18,6 +18,7 @@ using SaveTheStock.Application.Authentication.Login;
 using SaveTheStock.Application.Catalog.Categories.Create;
 using SaveTheStock.Application.Catalog.Categories.GetMyListPaged;
 using SaveTheStock.Application.Catalog.Categories.GetMyById;
+using SaveTheStock.Application.Catalog.Categories.Update;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -124,6 +125,7 @@ builder.Services.AddScoped<DeleteMyAccountUseCase>();
 builder.Services.AddScoped<LoginUseCase>();
 builder.Services.AddScoped<GetMyCategoriesPagedUseCase>();
 builder.Services.AddScoped<GetMyCategoryByIdUseCase>();
+builder.Services.AddScoped<UpdateCategoryUseCase>();
 
 // builds the app
 var app = builder.Build();

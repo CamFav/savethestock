@@ -4,6 +4,7 @@ using SaveTheStock.Api.Contracts.Categories;
 using SaveTheStock.Application.Catalog.Categories.Create;
 using SaveTheStock.Application.Catalog.Categories.GetMyById;
 using SaveTheStock.Application.Catalog.Categories.GetMyListPaged;
+using SaveTheStock.Application.Catalog.Categories.Update;
 using SaveTheStock.Application.Common.Security;
 
 namespace SaveTheStock.Api.Controllers.Categories;
@@ -19,15 +20,18 @@ public sealed class CategoriesController : ControllerBase
     private readonly CreateCategoryUseCase _create;
     private readonly GetMyCategoriesPagedUseCase _getPaged;
     private readonly GetMyCategoryByIdUseCase _getById;
+    private readonly UpdateCategoryUseCase _update;
 
     public CategoriesController(
         CreateCategoryUseCase create,
         GetMyCategoriesPagedUseCase getPaged,
-        GetMyCategoryByIdUseCase getById)
+        GetMyCategoryByIdUseCase getById,
+        UpdateCategoryUseCase update)
     {
         _create = create;
         _getPaged = getPaged;
         _getById = getById;
+        _update = update;
     }
 
     [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
@@ -121,6 +125,46 @@ public sealed class CategoriesController : ControllerBase
         catch (InvalidOperationException ex) when (ex.Message == "not_found")
         {
             return NotFound();
+        }
+    }
+
+    [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
+    [HttpPut("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Update(
+        Guid id,
+        [FromBody] UpdateCategoryRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _update.ExecuteAsync(
+                id,
+                new UpdateCategoryInput(request.Name),
+                cancellationToken);
+
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "not_found")
+        {
+            return NotFound();
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "duplicate_name")
+        {
+            return Conflict("Category name already used.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
         }
     }
 }
