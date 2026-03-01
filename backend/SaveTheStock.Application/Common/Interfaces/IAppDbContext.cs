@@ -96,6 +96,11 @@ public interface IAppDbContext
         int pageSize,
         CancellationToken cancellationToken);
 
+    Task<bool> ReceptionExistsForCompanyAsync(
+        Guid receptionId,
+        Guid companyId,
+        CancellationToken cancellationToken);
+
     // Persistence
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

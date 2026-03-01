@@ -4,6 +4,8 @@ using SaveTheStock.Api.Contracts.Receptions;
 using SaveTheStock.Application.Catalog.Receptions.Create;
 using SaveTheStock.Application.Catalog.Receptions.GetById;
 using SaveTheStock.Application.Catalog.Receptions.GetPaged;
+using SaveTheStock.Application.Catalog.Receptions.Delete;
+using SaveTheStock.Application.Catalog.Receptions.Update;
 using SaveTheStock.Application.Common.Security;
 
 namespace SaveTheStock.Api.Controllers;
@@ -19,14 +21,20 @@ public sealed class ReceptionsController : ControllerBase
     private readonly CreateReceptionUseCase _create;
     private readonly GetReceptionByIdUseCase _getById;
     private readonly GetReceptionsPagedUseCase _getPaged;
+    private readonly DeleteReceptionUseCase _delete;
+    private readonly UpdateReceptionUseCase _update;
 
     public ReceptionsController(CreateReceptionUseCase create,
         GetReceptionByIdUseCase getById,
-        GetReceptionsPagedUseCase getPaged)
+        GetReceptionsPagedUseCase getPaged,
+        DeleteReceptionUseCase delete,
+        UpdateReceptionUseCase update)
     {
         _create = create;
         _getById = getById;
         _getPaged = getPaged;
+        _delete = delete;
+        _update = update;
     }
 
     [HttpPost]
@@ -135,6 +143,57 @@ public sealed class ReceptionsController : ControllerBase
         catch (UnauthorizedAccessException)
         {
             return Unauthorized();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// [DELETE] Deletes a reception by its ID.
+    [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _delete.ExecuteAsync(id, cancellationToken);
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+    }
+
+    /// <summary>
+    /// [PUT] Updates a reception by its ID.
+    [HttpPut("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateReceptionRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _update.ExecuteAsync(
+                new UpdateReceptionInput(
+                    id,
+                    request.ReceptionDate,
+                    request.Reference,
+                    request.HasIssue,
+                    request.IssueNote,
+                    request.SupplierId),
+                cancellationToken);
+
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "not_found")
+        {
+            return NotFound();
         }
         catch (InvalidOperationException ex)
         {

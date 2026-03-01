@@ -24,8 +24,12 @@ public sealed class UpdateLotUseCase
         if (lot is null)
             throw new InvalidOperationException("not_found");
 
-        // note : 
-        // if (input.ReceptionId.HasValue) { ... throw "not_found" ... }
+        if (input.ReceptionId.HasValue)
+        {
+            var ok = await _db.ReceptionExistsForCompanyAsync(input.ReceptionId.Value, companyId, cancellationToken);
+            if (!ok)
+                throw new InvalidOperationException("not_found");
+        }
 
         lot.ReceptionId = input.ReceptionId;
         lot.LotCode = string.IsNullOrWhiteSpace(input.LotCode) ? null : input.LotCode.Trim();

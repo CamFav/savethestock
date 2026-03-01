@@ -65,6 +65,11 @@ public sealed class LotConfiguration : IEntityTypeConfiguration<Lot>
             .HasPrincipalKey(p => new { p.CompanyId, p.Id })
             .OnDelete(DeleteBehavior.Restrict);
 
-        // note: fk reception après
+        builder.HasOne<Reception>()
+            .WithMany()
+            .HasForeignKey(l => new { l.CompanyId, l.ReceptionId })
+            .HasPrincipalKey(r => new { r.CompanyId, r.Id })
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

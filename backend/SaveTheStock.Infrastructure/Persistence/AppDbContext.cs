@@ -308,4 +308,18 @@ public class AppDbContext : DbContext, IAppDbContext
 
         return (items, total);
     }
+
+    public Task<bool> ReceptionExistsForCompanyAsync(
+        Guid receptionId,
+        Guid companyId,
+        CancellationToken cancellationToken)
+    {
+        return Receptions
+            .AsNoTracking()
+            .AnyAsync(r =>
+                r.Id == receptionId &&
+                r.CompanyId == companyId &&
+                r.DeletedAt == null,
+                cancellationToken);
+    }
 }
