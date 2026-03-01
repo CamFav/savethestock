@@ -18,6 +18,8 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
 
+    public DbSet<Lot> Lots => Set<Lot>();
+
     public void AddAccount(Account account)
     {
         Accounts.Add(account);
@@ -196,5 +198,72 @@ public class AppDbContext : DbContext, IAppDbContext
             .ToListAsync(cancellationToken);
 
         return (items, total);
+    }
+
+    public void AddLot(Lot lot)
+    {
+        Lots.Add(lot);
+    }
+
+    public Task<Lot?> FindLotByIdAndCompanyIdAsync(
+        Guid lotId,
+        Guid companyId,
+        CancellationToken cancellationToken)
+    {
+        return Lots
+            .FirstOrDefaultAsync(l =>
+                l.Id == lotId &&
+                l.CompanyId == companyId &&
+                l.DeletedAt == null,
+                cancellationToken);
+    }
+
+    public async Task<(IReadOnlyList<Lot> Items, int Total)> GetLotsPagedAsync(
+        Guid companyId,
+        Guid? productId,
+        Guid? receptionId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var baseQuery = Lots
+            .AsNoTracking()
+            .Where(l =>
+                l.CompanyId == companyId &&
+                l.DeletedAt == null);
+
+        if (productId.HasValue)
+        {
+            baseQuery = baseQuery.Where(l => l.ProductId == productId.Value);
+        }
+
+        if (receptionId.HasValue)
+        {
+            baseQuery = baseQuery.Where(l => l.ReceptionId == receptionId.Value);
+        }
+
+        var total = await baseQuery.CountAsync(cancellationToken);
+
+        var items = await baseQuery
+            .OrderByDescending(l => l.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, total);
+    }
+
+    public Task<bool> ProductExistsForCompanyAsync(
+        Guid productId,
+        Guid companyId,
+        CancellationToken cancellationToken)
+    {
+        return Products
+            .AsNoTracking()
+            .AnyAsync(p =>
+                p.Id == productId &&
+                p.CompanyId == companyId &&
+                p.DeletedAt == null,
+                cancellationToken);
     }
 }
