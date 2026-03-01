@@ -64,6 +64,17 @@ public sealed class CreateLotTests
         Assert.NotNull(lot);
 
         Assert.Equal(10m, lot!.QuantityRemaining);
+
+        // Delete lot
+        var deleteResp = await client.DeleteAsync($"/api/lots/{lot!.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, deleteResp.StatusCode);
+
+        var deleteResp2 = await client.DeleteAsync($"/api/lots/{lot.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, deleteResp2.StatusCode);
+
+        // 404
+        var getResp = await client.GetAsync($"/api/lots/{lot.Id}");
+        Assert.Equal(HttpStatusCode.NotFound, getResp.StatusCode);
     }
 
     [Fact]

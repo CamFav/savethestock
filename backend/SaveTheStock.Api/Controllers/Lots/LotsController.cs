@@ -4,6 +4,7 @@ using SaveTheStock.Api.Contracts.Lots;
 using SaveTheStock.Application.Catalog.Lots.Create;
 using SaveTheStock.Application.Catalog.Lots.GetById;
 using SaveTheStock.Application.Catalog.Lots.GetPaged;
+using SaveTheStock.Application.Catalog.Lots.Delete;
 using SaveTheStock.Application.Common.Security;
 
 namespace SaveTheStock.Api.Controllers;
@@ -17,11 +18,18 @@ public sealed class LotsController : ControllerBase
     private readonly GetLotByIdUseCase _getById;
     private readonly GetLotsPagedUseCase _getPaged;
 
-    public LotsController(CreateLotUseCase createLot, GetLotByIdUseCase getById, GetLotsPagedUseCase getPaged)
+    private readonly DeleteLotUseCase _deleteLot;
+
+    public LotsController(
+        CreateLotUseCase createLot,
+        GetLotByIdUseCase getById,
+        GetLotsPagedUseCase getPaged,
+        DeleteLotUseCase deleteLot)
     {
         _createLot = createLot;
         _getById = getById;
         _getPaged = getPaged;
+        _deleteLot = deleteLot;
     }
 
     [HttpPost]
@@ -75,7 +83,6 @@ public sealed class LotsController : ControllerBase
     /// <summary>
     /// [GET] Gets a lot by its ID.
     /// </summary>
-    /// <returns></returns>
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<LotResponse>> GetById(Guid id, CancellationToken cancellationToken)
     {
@@ -111,6 +118,8 @@ public sealed class LotsController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// [GET] Gets a paginated list of lots, with optional filtering by product and reception.
     [HttpGet]
     public async Task<ActionResult<PagedLotsResponse>> GetPaged(
         [FromQuery] int page = 1,
@@ -152,6 +161,23 @@ public sealed class LotsController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return BadRequest(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// [DELETE] Soft-deletes a lot by its ID.
+    [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _deleteLot.ExecuteAsync(id, cancellationToken);
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
         }
     }
 }
