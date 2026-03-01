@@ -35,6 +35,7 @@ using SaveTheStock.Application.Catalog.Receptions.GetById;
 using SaveTheStock.Application.Catalog.Receptions.GetPaged;
 using SaveTheStock.Application.Catalog.Receptions.Delete;
 using SaveTheStock.Application.Catalog.Receptions.Update;
+using SaveTheStock.Application.Directory.Suppliers.Create;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -161,6 +162,8 @@ builder.Services.AddScoped<GetReceptionByIdUseCase>();
 builder.Services.AddScoped<GetReceptionsPagedUseCase>();
 builder.Services.AddScoped<DeleteReceptionUseCase>();
 builder.Services.AddScoped<UpdateReceptionUseCase>();
+// suppliers use cases
+builder.Services.AddScoped<CreateSupplierUseCase>();
 
 // builds the app
 var app = builder.Build();

@@ -18,6 +18,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Reception> Receptions => Set<Reception>();
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
 
     public DbSet<Lot> Lots => Set<Lot>();
 
@@ -321,5 +322,41 @@ public class AppDbContext : DbContext, IAppDbContext
                 r.CompanyId == companyId &&
                 r.DeletedAt == null,
                 cancellationToken);
+    }
+
+    public void AddSupplier(Supplier supplier)
+    {
+        Suppliers.Add(supplier);
+    }
+
+    public Task<Supplier?> FindSupplierByIdAndCompanyIdAsync(
+        Guid supplierId,
+        Guid companyId,
+        CancellationToken cancellationToken)
+    {
+        return Suppliers.FirstOrDefaultAsync(s =>
+            s.Id == supplierId &&
+            s.CompanyId == companyId &&
+            s.DeletedAt == null,
+            cancellationToken);
+    }
+
+    public Task<bool> SupplierNameExistsAsync(
+        Guid companyId,
+        string normalizedName,
+        Guid? excludeSupplierId,
+        CancellationToken cancellationToken)
+    {
+        var query = Suppliers
+            .AsNoTracking()
+            .Where(s =>
+                s.CompanyId == companyId &&
+                s.DeletedAt == null &&
+                s.Name == normalizedName);
+
+        if (excludeSupplierId.HasValue)
+            query = query.Where(s => s.Id != excludeSupplierId.Value);
+
+        return query.AnyAsync(cancellationToken);
     }
 }

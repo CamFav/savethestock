@@ -101,6 +101,20 @@ public interface IAppDbContext
         Guid companyId,
         CancellationToken cancellationToken);
 
+    // Suppliers
+    void AddSupplier(Supplier supplier);
+
+    Task<Supplier?> FindSupplierByIdAndCompanyIdAsync(
+        Guid supplierId,
+        Guid companyId,
+        CancellationToken cancellationToken);
+
+    Task<bool> SupplierNameExistsAsync(
+        Guid companyId,
+        string normalizedName,
+        Guid? excludeSupplierId,
+        CancellationToken cancellationToken);
+
     // Persistence
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
