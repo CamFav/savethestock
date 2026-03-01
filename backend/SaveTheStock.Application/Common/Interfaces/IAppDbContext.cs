@@ -61,6 +61,27 @@ public interface IAppDbContext
         int pageSize,
         CancellationToken cancellationToken);
 
+    // Lots
+    void AddLot(Lot lot);
+
+    Task<Lot?> FindLotByIdAndCompanyIdAsync(
+        Guid lotId,
+        Guid companyId,
+        CancellationToken cancellationToken);
+
+    Task<(IReadOnlyList<Lot> Items, int Total)> GetLotsPagedAsync(
+        Guid companyId,
+        Guid? productId,
+        Guid? receptionId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken);
+
+    Task<bool> ProductExistsForCompanyAsync(
+        Guid productId,
+        Guid companyId,
+        CancellationToken cancellationToken);
+
     // Persistence
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
