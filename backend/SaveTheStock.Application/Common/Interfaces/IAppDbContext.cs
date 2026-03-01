@@ -82,6 +82,14 @@ public interface IAppDbContext
         Guid companyId,
         CancellationToken cancellationToken);
 
+    // Stock - Receptions
+    void AddReception(Reception reception);
+
+    Task<Reception?> FindReceptionByIdAndCompanyIdAsync(
+        Guid receptionId,
+        Guid companyId,
+        CancellationToken cancellationToken);
+
     // Persistence
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

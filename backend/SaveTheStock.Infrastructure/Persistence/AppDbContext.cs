@@ -17,6 +17,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
+    public DbSet<Reception> Receptions => Set<Reception>();
 
     public DbSet<Lot> Lots => Set<Lot>();
 
@@ -265,5 +266,22 @@ public class AppDbContext : DbContext, IAppDbContext
                 p.CompanyId == companyId &&
                 p.DeletedAt == null,
                 cancellationToken);
+    }
+
+    public void AddReception(Reception reception)
+    {
+        Receptions.Add(reception);
+    }
+
+    public Task<Reception?> FindReceptionByIdAndCompanyIdAsync(
+        Guid receptionId,
+        Guid companyId,
+        CancellationToken cancellationToken)
+    {
+        return Receptions.FirstOrDefaultAsync(r =>
+            r.Id == receptionId &&
+            r.CompanyId == companyId &&
+            r.DeletedAt == null,
+            cancellationToken);
     }
 }

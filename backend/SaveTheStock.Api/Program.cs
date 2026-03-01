@@ -30,6 +30,7 @@ using SaveTheStock.Application.Catalog.Lots.GetById;
 using SaveTheStock.Application.Catalog.Lots.GetPaged;
 using SaveTheStock.Application.Catalog.Lots.Delete;
 using SaveTheStock.Application.Catalog.Lots.Update;
+using SaveTheStock.Application.Catalog.Receptions.Create;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -88,8 +89,6 @@ builder.Services.AddHttpContextAccessor();
 // current user accessor
 builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 
-// use cases
-builder.Services.AddScoped<CreateCategoryUseCase>();
 
 var jwt = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
           ?? throw new InvalidOperationException("Jwt section missing");
@@ -134,20 +133,26 @@ builder.Services.AddScoped<InviteAccountUseCase>();
 builder.Services.AddScoped<ChangeMyPasswordUseCase>();
 builder.Services.AddScoped<DeleteMyAccountUseCase>();
 builder.Services.AddScoped<LoginUseCase>();
+// categories use cases
+builder.Services.AddScoped<CreateCategoryUseCase>();
 builder.Services.AddScoped<GetMyCategoriesPagedUseCase>();
 builder.Services.AddScoped<GetMyCategoryByIdUseCase>();
 builder.Services.AddScoped<UpdateCategoryUseCase>();
 builder.Services.AddScoped<DeleteCategoryUseCase>();
+// products use cases
 builder.Services.AddScoped<CreateProductUseCase>();
 builder.Services.AddScoped<GetProductByIdUseCase>();
 builder.Services.AddScoped<GetProductsPagedUseCase>();
 builder.Services.AddScoped<UpdateProductUseCase>();
 builder.Services.AddScoped<DeleteProductUseCase>();
+// lots use cases 
 builder.Services.AddScoped<CreateLotUseCase>();
 builder.Services.AddScoped<GetLotByIdUseCase>();
 builder.Services.AddScoped<GetLotsPagedUseCase>();
 builder.Services.AddScoped<DeleteLotUseCase>();
 builder.Services.AddScoped<UpdateLotUseCase>();
+// receptions use cases
+builder.Services.AddScoped<CreateReceptionUseCase>();
 
 // builds the app
 var app = builder.Build();
