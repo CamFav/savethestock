@@ -65,6 +65,31 @@ public sealed class CreateLotTests
 
         Assert.Equal(10m, lot!.QuantityRemaining);
 
+        // Update lot
+        var putResp = await client.PutAsJsonAsync(
+            $"/api/lots/{lot.Id}",
+            new UpdateLotRequest(
+                ReceptionId: null,
+                LotCode: "LOT-UPDATED",
+                ExpiryDate: null,
+                UnitCost: 12.5m,
+                HasIssue: true,
+                IssueNote: "Packaging damaged"));
+
+        Assert.Equal(HttpStatusCode.NoContent, putResp.StatusCode);
+
+        var getAfterUpdate = await client.GetAsync($"/api/lots/{lot.Id}");
+        Assert.Equal(HttpStatusCode.OK, getAfterUpdate.StatusCode);
+
+        var updated = await getAfterUpdate.Content.ReadFromJsonAsync<LotResponse>();
+        Assert.NotNull(updated);
+        Assert.Equal("LOT-UPDATED", updated!.LotCode);
+        Assert.Equal(12.5m, updated.UnitCost);
+        Assert.True(updated.HasIssue);
+        Assert.Equal("Packaging damaged", updated.IssueNote);
+
+        
+
         // Delete lot
         var deleteResp = await client.DeleteAsync($"/api/lots/{lot!.Id}");
         Assert.Equal(HttpStatusCode.NoContent, deleteResp.StatusCode);

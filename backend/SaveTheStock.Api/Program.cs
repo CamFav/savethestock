@@ -29,6 +29,7 @@ using SaveTheStock.Application.Catalog.Lots.Create;
 using SaveTheStock.Application.Catalog.Lots.GetById;
 using SaveTheStock.Application.Catalog.Lots.GetPaged;
 using SaveTheStock.Application.Catalog.Lots.Delete;
+using SaveTheStock.Application.Catalog.Lots.Update;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -146,6 +147,7 @@ builder.Services.AddScoped<CreateLotUseCase>();
 builder.Services.AddScoped<GetLotByIdUseCase>();
 builder.Services.AddScoped<GetLotsPagedUseCase>();
 builder.Services.AddScoped<DeleteLotUseCase>();
+builder.Services.AddScoped<UpdateLotUseCase>();
 
 // builds the app
 var app = builder.Build();

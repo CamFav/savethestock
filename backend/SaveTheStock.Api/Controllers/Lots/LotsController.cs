@@ -6,6 +6,7 @@ using SaveTheStock.Application.Catalog.Lots.GetById;
 using SaveTheStock.Application.Catalog.Lots.GetPaged;
 using SaveTheStock.Application.Catalog.Lots.Delete;
 using SaveTheStock.Application.Common.Security;
+using SaveTheStock.Application.Catalog.Lots.Update;
 
 namespace SaveTheStock.Api.Controllers;
 
@@ -19,17 +20,20 @@ public sealed class LotsController : ControllerBase
     private readonly GetLotsPagedUseCase _getPaged;
 
     private readonly DeleteLotUseCase _deleteLot;
+    private readonly UpdateLotUseCase _updateLot;
 
     public LotsController(
         CreateLotUseCase createLot,
         GetLotByIdUseCase getById,
         GetLotsPagedUseCase getPaged,
-        DeleteLotUseCase deleteLot)
+        DeleteLotUseCase deleteLot,
+        UpdateLotUseCase updateLot)
     {
         _createLot = createLot;
         _getById = getById;
         _getPaged = getPaged;
         _deleteLot = deleteLot;
+        _updateLot = updateLot;
     }
 
     [HttpPost]
@@ -178,6 +182,42 @@ public sealed class LotsController : ControllerBase
         catch (UnauthorizedAccessException)
         {
             return Unauthorized();
+        }
+    }
+
+    /// <summary>
+    /// [PUT] Updates an existing lot by its ID.
+     /// </summary>
+    [HttpPut("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateLotRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _updateLot.ExecuteAsync(
+                new UpdateLotInput(
+                    id,
+                    request.ReceptionId,
+                    request.LotCode,
+                    request.ExpiryDate,
+                    request.UnitCost,
+                    request.HasIssue,
+                    request.IssueNote),
+                cancellationToken);
+
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "not_found")
+        {
+            return NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
         }
     }
 }
