@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SaveTheStock.Api.Contracts.Receptions;
 using SaveTheStock.Application.Catalog.Receptions.Create;
 using SaveTheStock.Application.Catalog.Receptions.GetById;
+using SaveTheStock.Application.Catalog.Receptions.GetPaged;
 using SaveTheStock.Application.Common.Security;
 
 namespace SaveTheStock.Api.Controllers;
@@ -17,11 +18,15 @@ public sealed class ReceptionsController : ControllerBase
 {
     private readonly CreateReceptionUseCase _create;
     private readonly GetReceptionByIdUseCase _getById;
+    private readonly GetReceptionsPagedUseCase _getPaged;
 
-    public ReceptionsController(CreateReceptionUseCase create, GetReceptionByIdUseCase getById)
+    public ReceptionsController(CreateReceptionUseCase create,
+        GetReceptionByIdUseCase getById,
+        GetReceptionsPagedUseCase getPaged)
     {
         _create = create;
         _getById = getById;
+        _getPaged = getPaged;
     }
 
     [HttpPost]
@@ -93,6 +98,43 @@ public sealed class ReceptionsController : ControllerBase
         catch (InvalidOperationException ex) when (ex.Message == "not_found")
         {
             return NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// [GET] Retrieves a paginated list of receptions.
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<PagedReceptionsResponse>> GetPaged(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var result = await _getPaged.ExecuteAsync(new GetReceptionsPagedInput(page, pageSize), cancellationToken);
+
+            var items = result.Items.Select(x => new ReceptionResponse(
+                x.Id,
+                x.CompanyId,
+                x.ReceptionDate,
+                x.Reference,
+                x.HasIssue,
+                x.IssueNote,
+                x.Status,
+                x.AccountId,
+                x.SupplierId,
+                x.CreatedAt)).ToList();
+
+            return Ok(new PagedReceptionsResponse(items, result.Page, result.PageSize, result.Total));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
         }
         catch (InvalidOperationException ex)
         {

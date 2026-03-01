@@ -32,6 +32,7 @@ using SaveTheStock.Application.Catalog.Lots.Delete;
 using SaveTheStock.Application.Catalog.Lots.Update;
 using SaveTheStock.Application.Catalog.Receptions.Create;
 using SaveTheStock.Application.Catalog.Receptions.GetById;
+using SaveTheStock.Application.Catalog.Receptions.GetPaged;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -155,6 +156,7 @@ builder.Services.AddScoped<UpdateLotUseCase>();
 // receptions use cases
 builder.Services.AddScoped<CreateReceptionUseCase>();
 builder.Services.AddScoped<GetReceptionByIdUseCase>();
+builder.Services.AddScoped<GetReceptionsPagedUseCase>();
 
 // builds the app
 var app = builder.Build();

@@ -284,4 +284,28 @@ public class AppDbContext : DbContext, IAppDbContext
             r.DeletedAt == null,
             cancellationToken);
     }
+
+    public async Task<(IReadOnlyList<Reception> Items, int Total)> GetReceptionsPagedAsync(
+        Guid companyId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var baseQuery = Receptions
+            .AsNoTracking()
+            .Where(r =>
+                r.CompanyId == companyId &&
+                r.DeletedAt == null);
+
+        var total = await baseQuery.CountAsync(cancellationToken);
+
+        var items = await baseQuery
+            .OrderByDescending(r => r.ReceptionDate)
+            .ThenByDescending(r => r.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, total);
+    }
 }

@@ -90,6 +90,12 @@ public interface IAppDbContext
         Guid companyId,
         CancellationToken cancellationToken);
 
+    Task<(IReadOnlyList<Reception> Items, int Total)> GetReceptionsPagedAsync(
+        Guid companyId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken);
+
     // Persistence
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
