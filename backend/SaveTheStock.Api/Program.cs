@@ -20,6 +20,11 @@ using SaveTheStock.Application.Catalog.Categories.GetMyListPaged;
 using SaveTheStock.Application.Catalog.Categories.GetMyById;
 using SaveTheStock.Application.Catalog.Categories.Update;
 using SaveTheStock.Application.Catalog.Categories.Delete;
+using SaveTheStock.Application.Catalog.Products.Create;
+using SaveTheStock.Application.Catalog.Products.GetById;
+using SaveTheStock.Application.Catalog.Products.GetPaged;
+using SaveTheStock.Application.Catalog.Products.Update;
+using SaveTheStock.Application.Catalog.Products.Delete;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -128,6 +133,11 @@ builder.Services.AddScoped<GetMyCategoriesPagedUseCase>();
 builder.Services.AddScoped<GetMyCategoryByIdUseCase>();
 builder.Services.AddScoped<UpdateCategoryUseCase>();
 builder.Services.AddScoped<DeleteCategoryUseCase>();
+builder.Services.AddScoped<CreateProductUseCase>();
+builder.Services.AddScoped<GetProductByIdUseCase>();
+builder.Services.AddScoped<GetProductsPagedUseCase>();
+builder.Services.AddScoped<UpdateProductUseCase>();
+builder.Services.AddScoped<DeleteProductUseCase>();
 
 // builds the app
 var app = builder.Build();
