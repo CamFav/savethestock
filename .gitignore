@@ -21,6 +21,7 @@ docker-data/
 # .NET
 # =========================
 bin/
+bin\
 obj/
 out/
 *.user
@@ -29,6 +30,8 @@ out/
 *.pdb
 *.mdb
 **/bin/
+**\bin/
+bin\Debug/
 **/obj/
 **/out/
 **/Debug/
