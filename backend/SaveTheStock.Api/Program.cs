@@ -36,11 +36,17 @@ using SaveTheStock.Application.Catalog.Receptions.GetPaged;
 using SaveTheStock.Application.Catalog.Receptions.Delete;
 using SaveTheStock.Application.Catalog.Receptions.Update;
 using SaveTheStock.Application.Directory.Suppliers.Create;
+using SaveTheStock.Application.Directory.Suppliers.Delete;
+using SaveTheStock.Application.Directory.Suppliers.GetById;
+using SaveTheStock.Application.Directory.Suppliers.GetPaged;
+using SaveTheStock.Application.Directory.Suppliers.Update;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // jwt binding
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+
+builder.Services.AddProblemDetails();
 
 // mvc controllers
 builder.Services.AddControllers();
@@ -81,6 +87,23 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default"))
            .UseSnakeCaseNamingConvention());
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+    {
+        var allowedOrigins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>() ?? Array.Empty<string>();
+
+        if (allowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedOrigins)
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        }
+    });
+});
 
 // authentication services
 builder.Services.AddScoped<SaveTheStock.Application.Authentication.IJwtTokenGenerator, SaveTheStock.Infrastructure.Authentication.JwtTokenGenerator>();
@@ -164,6 +187,11 @@ builder.Services.AddScoped<DeleteReceptionUseCase>();
 builder.Services.AddScoped<UpdateReceptionUseCase>();
 // suppliers use cases
 builder.Services.AddScoped<CreateSupplierUseCase>();
+builder.Services.AddScoped<GetSupplierByIdUseCase>();
+builder.Services.AddScoped<GetSuppliersPagedUseCase>();
+builder.Services.AddScoped<UpdateSupplierUseCase>();
+builder.Services.AddScoped<DeleteSupplierUseCase>();
+
 
 // builds the app
 var app = builder.Build();
@@ -175,6 +203,25 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    app.UseExceptionHandler();
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "no-referrer";
+    context.Response.Headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'";
+
+    await next();
+});
+
+app.UseCors("Frontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
