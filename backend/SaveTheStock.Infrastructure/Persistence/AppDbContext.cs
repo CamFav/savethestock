@@ -359,4 +359,27 @@ public class AppDbContext : DbContext, IAppDbContext
 
         return query.AnyAsync(cancellationToken);
     }
+
+    public async Task<(IReadOnlyList<Supplier> Items, int Total)> GetSuppliersPagedAsync(
+        Guid companyId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var baseQuery = Suppliers
+            .AsNoTracking()
+            .Where(s =>
+                s.CompanyId == companyId &&
+                s.DeletedAt == null);
+
+        var total = await baseQuery.CountAsync(cancellationToken);
+
+        var items = await baseQuery
+            .OrderBy(s => s.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, total);
+    }
 }

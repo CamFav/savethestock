@@ -115,6 +115,12 @@ public interface IAppDbContext
         Guid? excludeSupplierId,
         CancellationToken cancellationToken);
 
+    Task<(IReadOnlyList<Supplier> Items, int Total)> GetSuppliersPagedAsync(
+        Guid companyId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken);
+
     // Persistence
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
