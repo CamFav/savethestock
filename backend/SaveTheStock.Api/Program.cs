@@ -15,6 +15,7 @@ using SaveTheStock.Application.Accounts.InviteAccount;
 using SaveTheStock.Application.Accounts.ChangeMyPassword;
 using SaveTheStock.Application.Accounts.DeleteMyAccount;
 using SaveTheStock.Application.Authentication.Login;
+using SaveTheStock.Application.Authentication.Register;
 using SaveTheStock.Application.Catalog.Categories.Create;
 using SaveTheStock.Application.Catalog.Categories.GetMyListPaged;
 using SaveTheStock.Application.Catalog.Categories.GetMyById;
@@ -40,6 +41,8 @@ using SaveTheStock.Application.Directory.Suppliers.Delete;
 using SaveTheStock.Application.Directory.Suppliers.GetById;
 using SaveTheStock.Application.Directory.Suppliers.GetPaged;
 using SaveTheStock.Application.Directory.Suppliers.Update;
+using SaveTheStock.Api.Options;
+using SaveTheStock.Api.Services.Seeding;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -105,6 +108,9 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.Configure<DevelopmentSeedOptions>(
+    builder.Configuration.GetSection("DevSeed"));
+
 // authentication services
 builder.Services.AddScoped<SaveTheStock.Application.Authentication.IJwtTokenGenerator, SaveTheStock.Infrastructure.Authentication.JwtTokenGenerator>();
 builder.Services.AddScoped<IPasswordHasher<Account>, PasswordHasher<Account>>();
@@ -161,6 +167,7 @@ builder.Services.AddScoped<InviteAccountUseCase>();
 builder.Services.AddScoped<ChangeMyPasswordUseCase>();
 builder.Services.AddScoped<DeleteMyAccountUseCase>();
 builder.Services.AddScoped<LoginUseCase>();
+builder.Services.AddScoped<RegisterUseCase>();
 // categories use cases
 builder.Services.AddScoped<CreateCategoryUseCase>();
 builder.Services.AddScoped<GetMyCategoriesPagedUseCase>();
@@ -191,6 +198,9 @@ builder.Services.AddScoped<GetSupplierByIdUseCase>();
 builder.Services.AddScoped<GetSuppliersPagedUseCase>();
 builder.Services.AddScoped<UpdateSupplierUseCase>();
 builder.Services.AddScoped<DeleteSupplierUseCase>();
+
+
+builder.Services.AddHostedService<DevelopmentSeedHostedService>();
 
 
 // builds the app
