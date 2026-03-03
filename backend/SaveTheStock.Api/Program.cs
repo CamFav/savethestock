@@ -41,8 +41,14 @@ using SaveTheStock.Application.Directory.Suppliers.Delete;
 using SaveTheStock.Application.Directory.Suppliers.GetById;
 using SaveTheStock.Application.Directory.Suppliers.GetPaged;
 using SaveTheStock.Application.Directory.Suppliers.Update;
+using SaveTheStock.Application.Catalog.WasteSessions.Create;
+using SaveTheStock.Application.Catalog.WasteSessions.GetById;
+using SaveTheStock.Application.Catalog.WasteSessions.GetPaged;
+using SaveTheStock.Application.Catalog.WasteSessions.AddLine;
+using SaveTheStock.Application.Catalog.WasteSessions.UpdateLine;
+using SaveTheStock.Application.Catalog.WasteSessions.RemoveLine;
+using SaveTheStock.Application.Catalog.WasteSessions.Post;
 using SaveTheStock.Api.Options;
-using SaveTheStock.Api.Services.Seeding;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -198,9 +204,16 @@ builder.Services.AddScoped<GetSupplierByIdUseCase>();
 builder.Services.AddScoped<GetSuppliersPagedUseCase>();
 builder.Services.AddScoped<UpdateSupplierUseCase>();
 builder.Services.AddScoped<DeleteSupplierUseCase>();
+// waste sessions use cases
+builder.Services.AddScoped<CreateWasteSessionUseCase>();
+builder.Services.AddScoped<GetWasteSessionByIdUseCase>();
+builder.Services.AddScoped<GetWasteSessionsPagedUseCase>();
+builder.Services.AddScoped<AddWasteLineUseCase>();
+builder.Services.AddScoped<UpdateWasteLineUseCase>();
+builder.Services.AddScoped<RemoveWasteLineUseCase>();
+builder.Services.AddScoped<PostWasteSessionUseCase>();
 
 
-builder.Services.AddHostedService<DevelopmentSeedHostedService>();
 
 
 // builds the app

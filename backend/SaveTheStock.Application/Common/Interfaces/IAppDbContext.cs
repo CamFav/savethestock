@@ -124,6 +124,35 @@ public interface IAppDbContext
         int pageSize,
         CancellationToken cancellationToken);
 
+    // Waste sessions
+    void AddWasteSession(WasteSession wasteSession);
+    void AddWasteLine(WasteLine wasteLine);
+    void RemoveWasteLine(WasteLine wasteLine);
+
+    Task<WasteSession?> FindWasteSessionByIdAndCompanyIdAsync(
+        Guid id,
+        Guid companyId,
+        CancellationToken cancellationToken);
+
+    Task<(IReadOnlyList<WasteSession> Items, int Total)> GetWasteSessionsPagedAsync(
+        Guid companyId,
+        DateOnly? from,
+        DateOnly? to,
+        string? status,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken);
+
+    Task<WasteLine?> FindWasteLineByIdAndCompanyIdAsync(
+        Guid lineId,
+        Guid companyId,
+        CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<WasteLine>> GetWasteLinesForSessionAsync(
+        Guid sessionId,
+        Guid companyId,
+        CancellationToken cancellationToken);
+
     // Persistence
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

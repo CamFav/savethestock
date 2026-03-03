@@ -19,8 +19,9 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Reception> Receptions => Set<Reception>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
-
     public DbSet<Lot> Lots => Set<Lot>();
+    public DbSet<WasteSession> WasteSessions => Set<WasteSession>();
+    public DbSet<WasteLine> WasteLines => Set<WasteLine>();
 
     public void AddCompany(Company company)
     {
@@ -36,6 +37,7 @@ public class AppDbContext : DbContext, IAppDbContext
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
         base.OnModelCreating(modelBuilder);
+        
     }
 
     public Task<bool> AccountEmailExistsAsync(string normalizedEmail, CancellationToken cancellationToken)
@@ -386,5 +388,99 @@ public class AppDbContext : DbContext, IAppDbContext
             .ToListAsync(cancellationToken);
 
         return (items, total);
+    }
+
+    public void AddWasteSession(WasteSession wasteSession)
+    {
+        WasteSessions.Add(wasteSession);
+    }
+
+    public void AddWasteLine(WasteLine wasteLine)
+    {
+        WasteLines.Add(wasteLine);
+    }
+
+    public void RemoveWasteLine(WasteLine wasteLine)
+    {
+        WasteLines.Remove(wasteLine);
+    }
+
+    public Task<WasteSession?> FindWasteSessionByIdAndCompanyIdAsync(
+        Guid id,
+        Guid companyId,
+        CancellationToken cancellationToken)
+    {
+        return WasteSessions
+            .FirstOrDefaultAsync(ws =>
+                ws.Id == id &&
+                ws.CompanyId == companyId,
+                cancellationToken);
+    }
+
+    public async Task<(IReadOnlyList<WasteSession> Items, int Total)> GetWasteSessionsPagedAsync(
+        Guid companyId,
+        DateOnly? from,
+        DateOnly? to,
+        string? status,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var baseQuery = WasteSessions
+            .AsNoTracking()
+            .Where(ws => ws.CompanyId == companyId);
+
+        if (from.HasValue)
+        {
+            baseQuery = baseQuery.Where(ws => ws.WasteDate >= from.Value);
+        }
+
+        if (to.HasValue)
+        {
+            baseQuery = baseQuery.Where(ws => ws.WasteDate <= to.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            var normalizedStatus = status.Trim().ToUpperInvariant();
+            baseQuery = baseQuery.Where(ws => ws.Status == normalizedStatus);
+        }
+
+        var total = await baseQuery.CountAsync(cancellationToken);
+
+        var items = await baseQuery
+            .OrderByDescending(ws => ws.WasteDate)
+            .ThenByDescending(ws => ws.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, total);
+    }
+
+    public Task<WasteLine?> FindWasteLineByIdAndCompanyIdAsync(
+        Guid lineId,
+        Guid companyId,
+        CancellationToken cancellationToken)
+    {
+        return WasteLines
+            .FirstOrDefaultAsync(wl =>
+                wl.Id == lineId &&
+                wl.CompanyId == companyId,
+                cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<WasteLine>> GetWasteLinesForSessionAsync(
+        Guid sessionId,
+        Guid companyId,
+        CancellationToken cancellationToken)
+    {
+        return await WasteLines
+            .AsNoTracking()
+            .Where(wl =>
+                wl.CompanyId == companyId &&
+                wl.WasteSessionId == sessionId)
+            .OrderBy(wl => wl.Id)
+            .ToListAsync(cancellationToken);
     }
 }
