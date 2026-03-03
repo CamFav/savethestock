@@ -19,27 +19,22 @@ public sealed class CreateCompanyTests : IClassFixture<SaveTheStockApiFactory>
     }
 
     [Fact]
-    public async Task CreateCompany_ShouldReturn201Created()
+    public async Task CreateCompany_ShouldReturn401Unauthorized()
     {
         var request = new CreateCompanyRequest { Name = "Test Company" };
 
         var response = await _client.PostAsJsonAsync("/api/companies", request);
 
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-
-        var body = await response.Content.ReadFromJsonAsync<CompanyResponse>();
-        Assert.NotNull(body);
-        Assert.Equal("Test Company", body!.Name);
-        Assert.NotEqual(Guid.Empty, body.Id);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
-    public async Task CreateCompany_WithEmptyName_ShouldReturn400()
+    public async Task CreateCompany_WithEmptyName_ShouldReturn401Unauthorized()
     {
         var request = new CreateCompanyRequest { Name = "   " };
 
         var response = await _client.PostAsJsonAsync("/api/companies", request);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 }

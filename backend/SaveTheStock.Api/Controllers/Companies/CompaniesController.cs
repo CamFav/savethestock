@@ -78,6 +78,7 @@ public class CompaniesController : ControllerBase
     /// <summary>
     /// [POST] Creates a new company.
     /// </summary>
+    [Authorize]
     [HttpPost]
     public async Task<ActionResult<CompanyResponse>> CreateCompany(
         [FromBody] CreateCompanyRequest request,
