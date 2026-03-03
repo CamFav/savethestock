@@ -22,6 +22,11 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<Lot> Lots => Set<Lot>();
 
+    public void AddCompany(Company company)
+    {
+        Companies.Add(company);
+    }
+
     public void AddAccount(Account account)
     {
         Accounts.Add(account);

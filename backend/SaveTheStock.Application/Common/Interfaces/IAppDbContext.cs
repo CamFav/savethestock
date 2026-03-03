@@ -8,6 +8,9 @@ namespace SaveTheStock.Application.Common.Interfaces;
 /// </summary>
 public interface IAppDbContext
 {
+    // Companies
+    void AddCompany(Company company);
+
     // Accounts
     void AddAccount(Account account);
 
