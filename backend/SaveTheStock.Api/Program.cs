@@ -48,6 +48,13 @@ using SaveTheStock.Application.Catalog.WasteSessions.AddLine;
 using SaveTheStock.Application.Catalog.WasteSessions.UpdateLine;
 using SaveTheStock.Application.Catalog.WasteSessions.RemoveLine;
 using SaveTheStock.Application.Catalog.WasteSessions.Post;
+using SaveTheStock.Application.Catalog.Inventories.Create;
+using SaveTheStock.Application.Catalog.Inventories.GetById;
+using SaveTheStock.Application.Catalog.Inventories.GetPaged;
+using SaveTheStock.Application.Catalog.Inventories.UpsertLine;
+using SaveTheStock.Application.Catalog.Inventories.UpdateLine;
+using SaveTheStock.Application.Catalog.Inventories.RemoveLine;
+using SaveTheStock.Application.Catalog.Inventories.Post;
 using SaveTheStock.Api.Options;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -212,6 +219,14 @@ builder.Services.AddScoped<AddWasteLineUseCase>();
 builder.Services.AddScoped<UpdateWasteLineUseCase>();
 builder.Services.AddScoped<RemoveWasteLineUseCase>();
 builder.Services.AddScoped<PostWasteSessionUseCase>();
+// inventories use cases
+builder.Services.AddScoped<CreateInventoryUseCase>();
+builder.Services.AddScoped<GetInventoriesPagedUseCase>();
+builder.Services.AddScoped<GetInventoryByIdUseCase>();
+builder.Services.AddScoped<UpsertInventoryLineUseCase>();
+builder.Services.AddScoped<UpdateInventoryLineUseCase>();
+builder.Services.AddScoped<RemoveInventoryLineUseCase>();
+builder.Services.AddScoped<PostInventoryUseCase>();
 
 
 

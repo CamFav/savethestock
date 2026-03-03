@@ -22,6 +22,8 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<Lot> Lots => Set<Lot>();
     public DbSet<WasteSession> WasteSessions => Set<WasteSession>();
     public DbSet<WasteLine> WasteLines => Set<WasteLine>();
+    public DbSet<Inventory> Inventories => Set<Inventory>();
+    public DbSet<InventoryLine> InventoryLines => Set<InventoryLine>();
 
     public void AddCompany(Company company)
     {
@@ -482,5 +484,140 @@ public class AppDbContext : DbContext, IAppDbContext
                 wl.WasteSessionId == sessionId)
             .OrderBy(wl => wl.Id)
             .ToListAsync(cancellationToken);
+    }
+
+    public void AddInventory(Inventory inventory)
+    {
+        Inventories.Add(inventory);
+    }
+
+    public void AddInventoryLine(InventoryLine inventoryLine)
+    {
+        InventoryLines.Add(inventoryLine);
+    }
+
+    public void RemoveInventoryLine(InventoryLine inventoryLine)
+    {
+        InventoryLines.Remove(inventoryLine);
+    }
+
+    public Task<Inventory?> FindInventoryByIdAndCompanyIdAsync(
+        Guid id,
+        Guid companyId,
+        CancellationToken cancellationToken)
+    {
+        return Inventories
+            .FirstOrDefaultAsync(i =>
+                i.Id == id &&
+                i.CompanyId == companyId,
+                cancellationToken);
+    }
+
+    public async Task<(IReadOnlyList<Inventory> Items, int Total)> GetInventoriesPagedAsync(
+        Guid companyId,
+        DateOnly? from,
+        DateOnly? to,
+        string? status,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var baseQuery = Inventories
+            .AsNoTracking()
+            .Where(i => i.CompanyId == companyId);
+
+        if (from.HasValue)
+        {
+            baseQuery = baseQuery.Where(i => i.InventoryDate >= from.Value);
+        }
+
+        if (to.HasValue)
+        {
+            baseQuery = baseQuery.Where(i => i.InventoryDate <= to.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            var normalizedStatus = status.Trim().ToUpperInvariant();
+            baseQuery = baseQuery.Where(i => i.Status == normalizedStatus);
+        }
+
+        var total = await baseQuery.CountAsync(cancellationToken);
+
+        var items = await baseQuery
+            .OrderByDescending(i => i.InventoryDate)
+            .ThenByDescending(i => i.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, total);
+    }
+
+    public async Task<IReadOnlyList<InventoryLine>> GetInventoryLinesAsync(
+        Guid companyId,
+        Guid inventoryId,
+        CancellationToken cancellationToken)
+    {
+        return await InventoryLines
+            .Where(il =>
+                il.CompanyId == companyId &&
+                il.InventoryId == inventoryId)
+            .OrderBy(il => il.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<InventoryLine?> FindInventoryLineByIdAndCompanyIdAsync(
+        Guid lineId,
+        Guid companyId,
+        CancellationToken cancellationToken)
+    {
+        return InventoryLines
+            .FirstOrDefaultAsync(il =>
+                il.Id == lineId &&
+                il.CompanyId == companyId,
+                cancellationToken);
+    }
+
+    public Task<InventoryLine?> FindInventoryLineByInventoryAndProductAsync(
+        Guid companyId,
+        Guid inventoryId,
+        Guid productId,
+        CancellationToken cancellationToken)
+    {
+        return InventoryLines
+            .FirstOrDefaultAsync(il =>
+                il.CompanyId == companyId &&
+                il.InventoryId == inventoryId &&
+                il.ProductId == productId,
+                cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Lot>> GetActiveLotsByProductAsync(
+        Guid companyId,
+        Guid productId,
+        CancellationToken cancellationToken)
+    {
+        return await Lots
+            .Where(l =>
+                l.CompanyId == companyId &&
+                l.ProductId == productId &&
+                l.DeletedAt == null)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task ExecuteInTransactionAsync(
+        Func<CancellationToken, Task> operation,
+        CancellationToken cancellationToken)
+    {
+        if (Database.ProviderName?.Contains("InMemory", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            await operation(cancellationToken);
+            return;
+        }
+
+        await using var transaction = await Database.BeginTransactionAsync(cancellationToken);
+        await operation(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
     }
 }

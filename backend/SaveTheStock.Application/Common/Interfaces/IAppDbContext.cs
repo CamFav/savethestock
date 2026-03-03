@@ -153,6 +153,50 @@ public interface IAppDbContext
         Guid companyId,
         CancellationToken cancellationToken);
 
+    // Inventory
+    void AddInventory(Inventory inventory);
+    void AddInventoryLine(InventoryLine inventoryLine);
+    void RemoveInventoryLine(InventoryLine inventoryLine);
+
+    Task<Inventory?> FindInventoryByIdAndCompanyIdAsync(
+        Guid id,
+        Guid companyId,
+        CancellationToken cancellationToken);
+
+    Task<(IReadOnlyList<Inventory> Items, int Total)> GetInventoriesPagedAsync(
+        Guid companyId,
+        DateOnly? from,
+        DateOnly? to,
+        string? status,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<InventoryLine>> GetInventoryLinesAsync(
+        Guid companyId,
+        Guid inventoryId,
+        CancellationToken cancellationToken);
+
+    Task<InventoryLine?> FindInventoryLineByIdAndCompanyIdAsync(
+        Guid lineId,
+        Guid companyId,
+        CancellationToken cancellationToken);
+
+    Task<InventoryLine?> FindInventoryLineByInventoryAndProductAsync(
+        Guid companyId,
+        Guid inventoryId,
+        Guid productId,
+        CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<Lot>> GetActiveLotsByProductAsync(
+        Guid companyId,
+        Guid productId,
+        CancellationToken cancellationToken);
+
+    Task ExecuteInTransactionAsync(
+        Func<CancellationToken, Task> operation,
+        CancellationToken cancellationToken);
+
     // Persistence
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
