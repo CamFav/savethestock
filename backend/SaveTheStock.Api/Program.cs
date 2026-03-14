@@ -55,6 +55,8 @@ using SaveTheStock.Application.Catalog.Inventories.UpsertLine;
 using SaveTheStock.Application.Catalog.Inventories.UpdateLine;
 using SaveTheStock.Application.Catalog.Inventories.RemoveLine;
 using SaveTheStock.Application.Catalog.Inventories.Post;
+using SaveTheStock.Application.Catalog.Dashboard;
+using SaveTheStock.Application.Catalog.Operational;
 using SaveTheStock.Api.Options;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -227,6 +229,8 @@ builder.Services.AddScoped<UpsertInventoryLineUseCase>();
 builder.Services.AddScoped<UpdateInventoryLineUseCase>();
 builder.Services.AddScoped<RemoveInventoryLineUseCase>();
 builder.Services.AddScoped<PostInventoryUseCase>();
+builder.Services.AddScoped<DashboardService>();
+builder.Services.AddScoped<OperationalService>();
 
 
 
