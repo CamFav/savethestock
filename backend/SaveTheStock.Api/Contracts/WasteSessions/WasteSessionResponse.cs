@@ -8,4 +8,5 @@ public sealed record WasteSessionResponse(
     string Status,
     string? Comment,
     DateTime CreatedAt,
+    string? PostedByName,
     IReadOnlyList<WasteLineResponse> Lines);

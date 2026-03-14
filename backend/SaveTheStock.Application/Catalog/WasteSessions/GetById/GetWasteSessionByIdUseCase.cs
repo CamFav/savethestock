@@ -19,7 +19,7 @@ public sealed class GetWasteSessionByIdUseCase
     {
         var companyId = _currentUser.CompanyId ?? throw new UnauthorizedAccessException();
 
-        var session = await _db.FindWasteSessionByIdAndCompanyIdAsync(
+        var session = await _db.FindWasteSessionReadModelByIdAndCompanyIdAsync(
             input.WasteSessionId,
             companyId,
             cancellationToken);
@@ -48,6 +48,7 @@ public sealed class GetWasteSessionByIdUseCase
             session.Status,
             session.Comment,
             session.CreatedAt,
+            session.PostedByName,
             mapped);
     }
 }

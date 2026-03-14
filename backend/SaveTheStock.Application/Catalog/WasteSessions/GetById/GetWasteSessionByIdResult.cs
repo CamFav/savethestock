@@ -16,4 +16,5 @@ public sealed record GetWasteSessionByIdResult(
     string Status,
     string? Comment,
     DateTime CreatedAt,
+    string? PostedByName,
     IReadOnlyList<WasteLineResult> Lines);

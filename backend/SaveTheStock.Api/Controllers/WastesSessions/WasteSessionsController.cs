@@ -63,6 +63,7 @@ public sealed class WasteSessionsController : ControllerBase
                 result.Status,
                 result.Comment,
                 result.CreatedAt,
+                null,
                 []));
         }
         catch (UnauthorizedAccessException)
@@ -98,6 +99,7 @@ public sealed class WasteSessionsController : ControllerBase
                 x.Status,
                 x.Comment,
                 x.CreatedAt,
+                x.PostedByName,
                 [])).ToList();
 
             return Ok(new PagedWasteSessionsResponse(items, result.Page, result.PageSize, result.Total));
@@ -135,6 +137,7 @@ public sealed class WasteSessionsController : ControllerBase
                 result.Status,
                 result.Comment,
                 result.CreatedAt,
+                result.PostedByName,
                 lines));
         }
         catch (UnauthorizedAccessException)

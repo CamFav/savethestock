@@ -16,4 +16,5 @@ public sealed record GetInventoryByIdResult(
     string Status,
     string? Comment,
     DateTime CreatedAt,
+    string? PostedByName,
     IReadOnlyList<InventoryLineResult> Lines);

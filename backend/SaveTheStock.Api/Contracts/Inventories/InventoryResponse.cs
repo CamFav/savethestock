@@ -8,4 +8,5 @@ public sealed record InventoryResponse(
     string Status,
     string? Comment,
     DateTime CreatedAt,
+    string? PostedByName,
     IReadOnlyList<InventoryLineResponse> Lines);

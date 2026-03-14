@@ -22,7 +22,7 @@ public sealed class GetInventoriesPagedUseCase
         var page = input.Page <= 0 ? 1 : input.Page;
         var pageSize = input.PageSize <= 0 ? 20 : input.PageSize;
 
-        var (items, total) = await _db.GetInventoriesPagedAsync(
+        var (items, total) = await _db.GetInventoryReadModelsPagedAsync(
             companyId,
             input.From,
             input.To,
@@ -38,7 +38,8 @@ public sealed class GetInventoriesPagedUseCase
             x.InventoryDate,
             x.Status,
             x.Comment,
-            x.CreatedAt)).ToList();
+            x.CreatedAt,
+            x.PostedByName)).ToList();
 
         return new GetInventoriesPagedResult(mapped, page, pageSize, total);
     }

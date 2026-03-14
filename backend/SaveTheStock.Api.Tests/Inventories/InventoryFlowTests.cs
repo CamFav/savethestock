@@ -121,7 +121,7 @@ public sealed class InventoryFlowTests
 
         await CreateAndAuthenticateOwnerAsync(factory, client, "InvCoD", "inv-owner-d@test.com");
         var product = await CreateProductAsync(client, "RICE-INV-D");
-        await CreateLotAsync(client, product.Id, 3m, null);
+        var lot = await CreateLotAsync(client, product.Id, 3m, null);
 
         var inventory = await CreateInventoryAsync(client);
         var upsertResp = await client.PostAsJsonAsync(
@@ -132,8 +132,16 @@ public sealed class InventoryFlowTests
         var first = await client.PostAsync($"/api/inventories/{inventory.Id}/post", null);
         Assert.Equal(HttpStatusCode.NoContent, first.StatusCode);
 
+        var lotAfterFirstPost = await (await client.GetAsync($"/api/lots/{lot.Id}")).Content.ReadFromJsonAsync<LotResponse>();
+        Assert.NotNull(lotAfterFirstPost);
+        Assert.Equal(2m, lotAfterFirstPost!.QuantityRemaining);
+
         var second = await client.PostAsync($"/api/inventories/{inventory.Id}/post", null);
         Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+
+        var lotAfterSecondPost = await (await client.GetAsync($"/api/lots/{lot.Id}")).Content.ReadFromJsonAsync<LotResponse>();
+        Assert.NotNull(lotAfterSecondPost);
+        Assert.Equal(2m, lotAfterSecondPost!.QuantityRemaining);
     }
 
     [Fact]

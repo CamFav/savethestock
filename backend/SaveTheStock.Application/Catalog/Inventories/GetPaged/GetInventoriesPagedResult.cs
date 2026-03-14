@@ -7,7 +7,8 @@ public sealed record InventoryItem(
     DateOnly InventoryDate,
     string Status,
     string? Comment,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    string? PostedByName);
 
 public sealed record GetInventoriesPagedResult(
     IReadOnlyList<InventoryItem> Items,

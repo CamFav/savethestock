@@ -7,7 +7,8 @@ public sealed record WasteSessionItem(
     DateOnly WasteDate,
     string Status,
     string? Comment,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    string? PostedByName);
 
 public sealed record GetWasteSessionsPagedResult(
     IReadOnlyList<WasteSessionItem> Items,

@@ -19,7 +19,7 @@ public sealed class GetInventoryByIdUseCase
     {
         var companyId = _currentUser.CompanyId ?? throw new UnauthorizedAccessException();
 
-        var inventory = await _db.FindInventoryByIdAndCompanyIdAsync(
+        var inventory = await _db.FindInventoryReadModelByIdAndCompanyIdAsync(
             input.InventoryId,
             companyId,
             cancellationToken);
@@ -45,6 +45,7 @@ public sealed class GetInventoryByIdUseCase
             inventory.Status,
             inventory.Comment,
             inventory.CreatedAt,
+            inventory.PostedByName,
             mappedLines);
     }
 }

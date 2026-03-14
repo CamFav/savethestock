@@ -88,8 +88,20 @@ public sealed class WasteSessionFlowTests
         var firstPost = await client.PostAsync($"/api/waste-sessions/{session.Id}/post", null);
         Assert.Equal(HttpStatusCode.NoContent, firstPost.StatusCode);
 
+        var lotAfterFirstPostResp = await client.GetAsync($"/api/lots/{lot.Id}");
+        Assert.Equal(HttpStatusCode.OK, lotAfterFirstPostResp.StatusCode);
+        var lotAfterFirstPost = await lotAfterFirstPostResp.Content.ReadFromJsonAsync<LotResponse>();
+        Assert.NotNull(lotAfterFirstPost);
+        Assert.Equal(7m, lotAfterFirstPost!.QuantityRemaining);
+
         var secondPost = await client.PostAsync($"/api/waste-sessions/{session.Id}/post", null);
         Assert.Equal(HttpStatusCode.Conflict, secondPost.StatusCode);
+
+        var lotAfterSecondPostResp = await client.GetAsync($"/api/lots/{lot.Id}");
+        Assert.Equal(HttpStatusCode.OK, lotAfterSecondPostResp.StatusCode);
+        var lotAfterSecondPost = await lotAfterSecondPostResp.Content.ReadFromJsonAsync<LotResponse>();
+        Assert.NotNull(lotAfterSecondPost);
+        Assert.Equal(7m, lotAfterSecondPost!.QuantityRemaining);
     }
 
     [Fact]
