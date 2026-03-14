@@ -12,6 +12,8 @@ public class Inventory
     public string Status { get; set; } = "DRAFT";
     public string? Comment { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime? PostedAt { get; set; }
+    public Guid? PostedByAccountId { get; set; }
 
     public ICollection<InventoryLine> Lines { get; set; } = new List<InventoryLine>();
 }
@@ -28,4 +30,3 @@ public class InventoryLine
     public Inventory? Inventory { get; set; }
     public Product? Product { get; set; }
 }
-

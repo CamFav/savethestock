@@ -39,6 +39,12 @@ public class InventoryConfiguration : IEntityTypeConfiguration<Inventory>
             .HasColumnName("created_at")
             .IsRequired();
 
+        b.Property(x => x.PostedAt)
+            .HasColumnName("posted_at");
+
+        b.Property(x => x.PostedByAccountId)
+            .HasColumnName("posted_by_account_id");
+
         b.HasMany(x => x.Lines)
             .WithOne(x => x.Inventory)
             .HasForeignKey(x => new { x.CompanyId, x.InventoryId })
@@ -54,4 +60,3 @@ public class InventoryConfiguration : IEntityTypeConfiguration<Inventory>
         });
     }
 }
-

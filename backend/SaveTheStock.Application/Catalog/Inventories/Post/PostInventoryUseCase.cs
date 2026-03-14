@@ -1,5 +1,6 @@
 using SaveTheStock.Application.Common.Interfaces;
 using SaveTheStock.Domain.Entities;
+using System.Data;
 
 namespace SaveTheStock.Application.Catalog.Inventories.Post;
 
@@ -17,10 +18,13 @@ public sealed class PostInventoryUseCase
     public async Task ExecuteAsync(PostInventoryInput input, CancellationToken cancellationToken)
     {
         var companyId = _currentUser.CompanyId ?? throw new UnauthorizedAccessException();
+        var accountId = _currentUser.AccountId ?? throw new UnauthorizedAccessException();
 
+        // Serializable + row-level locks ensure concurrent POST retries cannot
+        // re-apply lot adjustments for the same inventory.
         await _db.ExecuteInTransactionAsync(async ct =>
         {
-            var inventory = await _db.FindInventoryByIdAndCompanyIdAsync(input.InventoryId, companyId, ct);
+            var inventory = await _db.FindInventoryByIdAndCompanyIdForUpdateAsync(input.InventoryId, companyId, ct);
             if (inventory is null)
                 throw new InvalidOperationException("not_found");
 
@@ -34,7 +38,7 @@ public sealed class PostInventoryUseCase
             if (lines.Count == 0)
                 throw new InvalidOperationException("empty_inventory");
 
-            foreach (var line in lines)
+            foreach (var line in lines.OrderBy(x => x.ProductId))
             {
                 if (line.RealQuantity < 0)
                     throw new InvalidOperationException("invalid_quantity");
@@ -46,7 +50,7 @@ public sealed class PostInventoryUseCase
                 if (!product.IsActive)
                     throw new InvalidOperationException("inactive_product");
 
-                var lots = (await _db.GetActiveLotsByProductAsync(companyId, line.ProductId, ct)).ToList();
+                var lots = (await _db.GetActiveLotsByProductForUpdateAsync(companyId, line.ProductId, ct)).ToList();
                 if (lots.Count == 0)
                     throw new InvalidOperationException("no_lot_for_product");
 
@@ -100,7 +104,9 @@ public sealed class PostInventoryUseCase
             }
 
             inventory.Status = "POSTED";
+            inventory.PostedAt = DateTime.UtcNow;
+            inventory.PostedByAccountId = accountId;
             await _db.SaveChangesAsync(ct);
-        }, cancellationToken);
+        }, IsolationLevel.Serializable, cancellationToken);
     }
 }

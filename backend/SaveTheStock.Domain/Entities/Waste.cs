@@ -12,6 +12,8 @@ public class WasteSession
     public string Status { get; set; } = "DRAFT";
     public string? Comment { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime? PostedAt { get; set; }
+    public Guid? PostedByAccountId { get; set; }
 
     public ICollection<WasteLine> Lines { get; set; } = new List<WasteLine>();
 }

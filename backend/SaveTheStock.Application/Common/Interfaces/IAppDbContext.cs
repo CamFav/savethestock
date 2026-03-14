@@ -1,4 +1,7 @@
 using SaveTheStock.Domain.Entities;
+using SaveTheStock.Application.Catalog.Dashboard;
+using SaveTheStock.Application.Catalog.Operational;
+using System.Data;
 
 namespace SaveTheStock.Application.Common.Interfaces;
 
@@ -133,8 +136,24 @@ public interface IAppDbContext
         Guid id,
         Guid companyId,
         CancellationToken cancellationToken);
+    Task<WasteSessionReadModel?> FindWasteSessionReadModelByIdAndCompanyIdAsync(
+        Guid id,
+        Guid companyId,
+        CancellationToken cancellationToken);
+    Task<WasteSession?> FindWasteSessionByIdAndCompanyIdForUpdateAsync(
+        Guid id,
+        Guid companyId,
+        CancellationToken cancellationToken);
 
     Task<(IReadOnlyList<WasteSession> Items, int Total)> GetWasteSessionsPagedAsync(
+        Guid companyId,
+        DateOnly? from,
+        DateOnly? to,
+        string? status,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken);
+    Task<(IReadOnlyList<WasteSessionReadModel> Items, int Total)> GetWasteSessionReadModelsPagedAsync(
         Guid companyId,
         DateOnly? from,
         DateOnly? to,
@@ -162,8 +181,24 @@ public interface IAppDbContext
         Guid id,
         Guid companyId,
         CancellationToken cancellationToken);
+    Task<InventoryReadModel?> FindInventoryReadModelByIdAndCompanyIdAsync(
+        Guid id,
+        Guid companyId,
+        CancellationToken cancellationToken);
+    Task<Inventory?> FindInventoryByIdAndCompanyIdForUpdateAsync(
+        Guid id,
+        Guid companyId,
+        CancellationToken cancellationToken);
 
     Task<(IReadOnlyList<Inventory> Items, int Total)> GetInventoriesPagedAsync(
+        Guid companyId,
+        DateOnly? from,
+        DateOnly? to,
+        string? status,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken);
+    Task<(IReadOnlyList<InventoryReadModel> Items, int Total)> GetInventoryReadModelsPagedAsync(
         Guid companyId,
         DateOnly? from,
         DateOnly? to,
@@ -192,11 +227,114 @@ public interface IAppDbContext
         Guid companyId,
         Guid productId,
         CancellationToken cancellationToken);
+    Task<IReadOnlyList<Lot>> GetActiveLotsByProductForUpdateAsync(
+        Guid companyId,
+        Guid productId,
+        CancellationToken cancellationToken);
+    Task<IReadOnlyList<Lot>> GetLotsByIdsForUpdateAsync(
+        Guid companyId,
+        IReadOnlyCollection<Guid> lotIds,
+        CancellationToken cancellationToken);
 
     Task ExecuteInTransactionAsync(
         Func<CancellationToken, Task> operation,
+        IsolationLevel isolationLevel,
+        CancellationToken cancellationToken);
+
+    // Dashboard
+    Task<(decimal StockUsableValue, decimal StockExpiredValue, decimal StockTotalValue)> GetStockValuesAsync(
+        Guid companyId,
+        DateOnly today,
+        CancellationToken cancellationToken);
+
+    Task<(decimal WasteValue, decimal WasteQty)> GetWasteTotalsAsync(
+        Guid companyId,
+        DateOnly? from,
+        DateOnly? to,
+        CancellationToken cancellationToken);
+
+    Task<decimal> GetReceptionsValueAsync(
+        Guid companyId,
+        DateOnly? from,
+        DateOnly? to,
+        CancellationToken cancellationToken);
+
+    Task<decimal> GetInventoryVarianceValueAsync(
+        Guid companyId,
+        DateOnly? from,
+        DateOnly? to,
+        CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<WasteTrendPointData>> GetWasteTrendAsync(
+        Guid companyId,
+        DateOnly fromDate,
+        DateOnly toDate,
+        CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<TopWasteProductData>> GetTopWasteProductsAsync(
+        Guid companyId,
+        DateOnly? from,
+        DateOnly? to,
+        int limit,
+        CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<LowStockProductAlertData>> GetLowStockProductsAsync(
+        Guid companyId,
+        DateOnly today,
+        CancellationToken cancellationToken);
+
+    Task<decimal> GetExpiredStockValueAsync(
+        Guid companyId,
+        DateOnly today,
+        CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<LotAlertData>> GetExpiringLotsAsync(
+        Guid companyId,
+        DateOnly fromDate,
+        DateOnly toDate,
+        CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<LotAlertData>> GetExpiredLotsAsync(
+        Guid companyId,
+        DateOnly today,
+        CancellationToken cancellationToken);
+
+    // Operational
+    Task<IReadOnlyList<OperationalLotItemData>> GetOperationalExpiringLotsAsync(
+        Guid companyId,
+        DateOnly today,
+        DateOnly toDate,
+        CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<OperationalLotItemData>> GetOperationalExpiredLotsAsync(
+        Guid companyId,
+        DateOnly today,
+        CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<OperationalLowStockProductData>> GetOperationalLowStockProductsAsync(
+        Guid companyId,
         CancellationToken cancellationToken);
 
     // Persistence
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
+
+public sealed record WasteSessionReadModel(
+    Guid Id,
+    Guid CompanyId,
+    Guid AccountId,
+    DateOnly WasteDate,
+    string Status,
+    string? Comment,
+    DateTime CreatedAt,
+    string? PostedByName);
+
+public sealed record InventoryReadModel(
+    Guid Id,
+    Guid CompanyId,
+    Guid AccountId,
+    DateOnly InventoryDate,
+    string Status,
+    string? Comment,
+    DateTime CreatedAt,
+    string? PostedByName);
