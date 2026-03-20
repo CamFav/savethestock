@@ -287,7 +287,11 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+var enableHttpsRedirection = app.Configuration.GetValue("App:EnableHttpsRedirection", app.Environment.IsDevelopment());
+if (enableHttpsRedirection)
+{
+    app.UseHttpsRedirection();
+}
 
 app.Use(async (context, next) =>
 {

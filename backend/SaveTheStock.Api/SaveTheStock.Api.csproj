@@ -4,6 +4,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <EnableDefaultContentItems>false</EnableDefaultContentItems>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +20,15 @@
   <ItemGroup>
     <ProjectReference Include="..\SaveTheStock.Application\SaveTheStock.Application.csproj" />
     <ProjectReference Include="..\SaveTheStock.Infrastructure\SaveTheStock.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Controllers/**/*.cs" />
+    <Compile Include="Contracts/**/*.cs" />
+    <Compile Include="Options/**/*.cs" />
+    <Compile Include="Services/**/*.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Program.Partial.cs" />
   </ItemGroup>
 
 </Project>

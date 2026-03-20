@@ -53,7 +53,7 @@ services:
     restart: unless-stopped
     environment:
       VITE_PORT: "5173"
-      VITE_API_BASE_URL: /api
+      VITE_API_BASE_URL: ""
       VITE_API_TIMEOUT_MS: ${VITE_API_TIMEOUT_MS:-15000}
       VITE_PROXY_TARGET: http://backend:8080
       CHOKIDAR_USEPOLLING: "true"
