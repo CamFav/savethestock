@@ -85,9 +85,9 @@ export function InventoriesPage() {
       }),
   });
 
-  const items = inventoriesQuery.data?.items ?? [];
+  const items = useMemo(() => inventoriesQuery.data?.items ?? [], [inventoriesQuery.data?.items]);
   const total = inventoriesQuery.data?.total ?? 0;
-  const products = productsQuery.data?.items ?? [];
+  const products = useMemo(() => productsQuery.data?.items ?? [], [productsQuery.data?.items]);
   const draftCount = useMemo(() => items.filter((item) => item.status?.toUpperCase() === "DRAFT").length, [items]);
   const validatedCount = useMemo(() => items.filter((item) => item.status?.toUpperCase() === "POSTED").length, [items]);
 
@@ -114,7 +114,7 @@ export function InventoriesPage() {
       }
       toast.error(getApiErrorMessage(apiError, "Impossible d’exporter le CSV."));
     }
-  }, [exportCsvMutation, filters.from, filters.status, filters.to, filters.productId]);
+  }, [exportCsvMutation, filters.from, filters.to]);
 
   const handlePageSizeChange = useCallback((nextPageSize: number) => {
     setFilters({ pageSize: nextPageSize, page: 1 });

@@ -66,6 +66,7 @@ export function SuppliersPage() {
   const [deleteTarget, setDeleteTarget] = useState<SupplierListItem | null>(null);
   const [searchValue, setSearchValue] = useState("");
   const deferredSearchValue = useDeferredValue(searchValue);
+  const [recentSuppliersCutoff] = useState(() => Date.now() - 30 * 24 * 60 * 60 * 1000);
 
   const suppliersQuery = useSuppliersList({ page: 1, pageSize: SUPPLIERS_PAGE_SIZE });
   const receptionsQuery = useReceptionsList({ page: 1, pageSize: RECEPTIONS_PAGE_SIZE });
@@ -73,8 +74,8 @@ export function SuppliersPage() {
   const updateSupplierMutation = useUpdateSupplier();
   const deleteSupplierMutation = useDeleteSupplier();
 
-  const items = suppliersQuery.data?.items ?? [];
-  const receptions = receptionsQuery.data?.items ?? [];
+  const items = useMemo(() => suppliersQuery.data?.items ?? [], [suppliersQuery.data?.items]);
+  const receptions = useMemo(() => receptionsQuery.data?.items ?? [], [receptionsQuery.data?.items]);
   const editTarget = dialogState?.mode === "edit" ? dialogState.supplier : null;
 
   const receptionStatsBySupplier = useMemo(() => {
@@ -108,13 +109,11 @@ export function SuppliersPage() {
   }, [deferredSearchValue, items]);
 
   const recentSuppliers = useMemo(() => {
-    const last30Days = Date.now() - 30 * 24 * 60 * 60 * 1000;
-
     return items.filter((supplier) => {
       const latestDate = receptionStatsBySupplier.get(supplier.id)?.latestDate;
-      return latestDate ? new Date(latestDate).getTime() >= last30Days : false;
+      return latestDate ? new Date(latestDate).getTime() >= recentSuppliersCutoff : false;
     }).length;
-  }, [items, receptionStatsBySupplier]);
+  }, [items, receptionStatsBySupplier, recentSuppliersCutoff]);
 
   const limitNotice = useMemo(() => {
     const notices: string[] = [];

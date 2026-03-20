@@ -51,7 +51,7 @@ export function ReceptionsPage() {
   const defaultNotes = searchParams.get("notes") ?? "";
   const defaultReceptionDate = searchParams.get("receptionDate") ?? "";
 
-  const suppliers = suppliersQuery.data?.items ?? [];
+  const suppliers = useMemo(() => suppliersQuery.data?.items ?? [], [suppliersQuery.data?.items]);
   const canCreate = suppliers.length > 0 && !suppliersQuery.isLoading && !suppliersQuery.isError;
 
   const supplierNameById = useMemo(() => {
@@ -61,7 +61,7 @@ export function ReceptionsPage() {
     }, {});
   }, [suppliers]);
 
-  const items = receptionsQuery.data?.items ?? [];
+  const items = useMemo(() => receptionsQuery.data?.items ?? [], [receptionsQuery.data?.items]);
   const total = receptionsQuery.data?.total ?? 0;
   const rows = useMemo(() => withSupplierNames(items, supplierNameById), [items, supplierNameById]);
 
@@ -94,7 +94,7 @@ export function ReceptionsPage() {
         toast.error(getApiErrorMessage(apiError, "Impossible de créer la réception. Réessayez."));
       }
     },
-    [createReceptionMutation, navigate],
+    [attachReceptionToOrder, createReceptionMutation, navigate, orderId],
   );
 
   const handlePageSizeChange = useCallback((nextPageSize: number) => {

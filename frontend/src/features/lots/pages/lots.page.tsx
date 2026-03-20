@@ -190,13 +190,13 @@ export function LotsPage() {
   const updateLotMutation = useUpdateLot();
   const deleteLotMutation = useDeleteLot();
 
-  const products = productsQuery.data?.items ?? [];
-  const receptions = receptionsQuery.data?.items ?? [];
-  const categories = categoriesQuery.data?.items ?? [];
+  const products = useMemo(() => productsQuery.data?.items ?? [], [productsQuery.data?.items]);
+  const receptions = useMemo(() => receptionsQuery.data?.items ?? [], [receptionsQuery.data?.items]);
+  const categories = useMemo(() => categoriesQuery.data?.items ?? [], [categoriesQuery.data?.items]);
 
   const totalLots = pagedLotsQuery.data?.total ?? 0;
-  const pagedLots = pagedLotsQuery.data?.items ?? [];
-  const summaryLots = summaryLotsQuery.data?.items ?? [];
+  const pagedLots = useMemo(() => pagedLotsQuery.data?.items ?? [], [pagedLotsQuery.data?.items]);
+  const summaryLots = useMemo(() => summaryLotsQuery.data?.items ?? [], [summaryLotsQuery.data?.items]);
 
   const productNameById = useMemo(() => {
     return products.reduce<Record<string, string>>((acc, product) => {

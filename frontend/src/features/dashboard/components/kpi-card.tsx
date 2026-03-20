@@ -6,12 +6,6 @@ type KpiCardProps = {
   item: DashboardKpi;
 };
 
-function getTrendIcon(direction: DashboardKpi["trend"]["direction"]) {
-  if (direction === "up") return ArrowUpRight;
-  if (direction === "down") return ArrowDownRight;
-  return ArrowRight;
-}
-
 function getTrendClassName(direction: DashboardKpi["trend"]["direction"]) {
   if (direction === "up") return "text-emerald-700 bg-emerald-50";
   if (direction === "down") return "text-rose-700 bg-rose-50";
@@ -19,7 +13,6 @@ function getTrendClassName(direction: DashboardKpi["trend"]["direction"]) {
 }
 
 export function KpiCard({ item }: KpiCardProps) {
-  const TrendIcon = getTrendIcon(item.trend.direction);
   const trendClassName = getTrendClassName(item.trend.direction);
 
   return (
@@ -32,7 +25,13 @@ export function KpiCard({ item }: KpiCardProps) {
         <p className="text-xs text-muted-foreground">{item.hint}</p>
         <div className="flex items-center gap-2">
           <span className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium ${trendClassName}`}>
-            <TrendIcon className="h-3.5 w-3.5" />
+            {item.trend.direction === "up" ? (
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            ) : item.trend.direction === "down" ? (
+              <ArrowDownRight className="h-3.5 w-3.5" />
+            ) : (
+              <ArrowRight className="h-3.5 w-3.5" />
+            )}
             {item.trend.value}
           </span>
           <span className="text-xs text-muted-foreground">{item.trend.label}</span>

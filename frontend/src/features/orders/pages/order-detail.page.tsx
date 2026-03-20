@@ -66,7 +66,7 @@ export function OrderDetailPage() {
   const [receiveByLineId, setReceiveByLineId] = useState<Record<string, ReceiveLineState>>({});
 
   const order = useMemo(() => orders.find((item) => item.id === orderId) ?? null, [orderId, orders]);
-  const products = productsQuery.data?.items ?? [];
+  const products = useMemo(() => productsQuery.data?.items ?? [], [productsQuery.data?.items]);
   const suppliers = suppliersQuery.data?.items ?? [];
 
   const availableProducts = useMemo(() => products.filter((product) => !order?.lines.some((line) => line.productId === product.id)), [order?.lines, products]);

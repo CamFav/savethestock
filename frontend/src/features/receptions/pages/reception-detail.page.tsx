@@ -59,8 +59,8 @@ export function ReceptionDetailPage() {
   const createLotMutation = useCreateLot();
   const deleteLotMutation = useDeleteLot();
 
-  const suppliers = suppliersQuery.data?.items ?? [];
-  const products = productsQuery.data?.items ?? [];
+  const suppliers = useMemo(() => suppliersQuery.data?.items ?? [], [suppliersQuery.data?.items]);
+  const products = useMemo(() => productsQuery.data?.items ?? [], [productsQuery.data?.items]);
 
   const supplierNameById = useMemo(() => {
     return suppliers.reduce<Record<string, string>>((acc, item) => {

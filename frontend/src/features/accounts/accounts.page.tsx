@@ -96,6 +96,13 @@ export function AccountsPage() {
   const [createdInvitation, setCreatedInvitation] = useState<Invitation | null>(null);
   const [memberToDelete, setMemberToDelete] = useState<{ id: string; displayName: string } | null>(null);
   const isInviteOpen = searchParams.get("invite") === "1";
+  const members = useMemo(() => accountsQuery.data ?? [], [accountsQuery.data]);
+  const invitations = useMemo(() => invitationsQuery.data ?? [], [invitationsQuery.data]);
+  const pendingInvitations = useMemo(
+    () => invitations.filter((invitation) => invitation.status.toUpperCase() === "PENDING"),
+    [invitations],
+  );
+  const ownerCount = members.filter((account) => getAccountRole(account.role) === "OWNER").length;
 
   function setInviteOpen(open: boolean) {
     const next = new URLSearchParams(searchParams);
@@ -135,14 +142,6 @@ export function AccountsPage() {
       </section>
     );
   }
-
-  const members = accountsQuery.data ?? [];
-  const invitations = invitationsQuery.data ?? [];
-  const pendingInvitations = useMemo(
-    () => invitations.filter((invitation) => invitation.status.toUpperCase() === "PENDING"),
-    [invitations],
-  );
-  const ownerCount = members.filter((account) => getAccountRole(account.role) === "OWNER").length;
 
   async function handleCreateInvitation(values: { displayName: string; email: string; role: "MEMBER" }) {
     try {

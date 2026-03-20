@@ -90,9 +90,9 @@ export function WasteSessionsPage() {
       }),
   });
 
-  const items = wasteSessionsQuery.data?.items ?? [];
+  const items = useMemo(() => wasteSessionsQuery.data?.items ?? [], [wasteSessionsQuery.data?.items]);
   const total = wasteSessionsQuery.data?.total ?? 0;
-  const products = productsQuery.data?.items ?? [];
+  const products = useMemo(() => productsQuery.data?.items ?? [], [productsQuery.data?.items]);
   const draftCount = useMemo(() => items.filter((item) => item.status?.toUpperCase() === "DRAFT").length, [items]);
   const validatedCount = useMemo(() => items.filter((item) => item.status?.toUpperCase() === "POSTED").length, [items]);
 
@@ -119,7 +119,7 @@ export function WasteSessionsPage() {
       }
       toast.error(getApiErrorMessage(apiError, "Impossible d’exporter le CSV."));
     }
-  }, [exportCsvMutation, filters.from, filters.status, filters.to, filters.productId, filters.reason]);
+  }, [exportCsvMutation, filters.from, filters.to]);
 
   const handlePageSizeChange = useCallback((nextPageSize: number) => {
     setFilters({ pageSize: nextPageSize, page: 1 });

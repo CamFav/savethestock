@@ -269,9 +269,9 @@ export function CatalogPage() {
   const updateProductMutation = useUpdateProduct();
   const deleteProductMutation = useDeleteProduct();
 
-  const categories = categoriesQuery.data?.items ?? [];
-  const products = productsQuery.data?.items ?? [];
-  const lots = lotsQuery.data?.items ?? [];
+  const categories = useMemo(() => categoriesQuery.data?.items ?? [], [categoriesQuery.data?.items]);
+  const products = useMemo(() => productsQuery.data?.items ?? [], [productsQuery.data?.items]);
+  const lots = useMemo(() => lotsQuery.data?.items ?? [], [lotsQuery.data?.items]);
   const hasCategories = categories.length > 0;
 
   const lowStockProductIds = useMemo(() => {

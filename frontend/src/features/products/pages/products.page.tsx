@@ -75,9 +75,9 @@ export function ProductsPage() {
   const updateProductMutation = useUpdateProduct();
   const deleteProductMutation = useDeleteProduct();
 
-  const categories = categoriesQuery.data?.items ?? [];
+  const categories = useMemo(() => categoriesQuery.data?.items ?? [], [categoriesQuery.data?.items]);
   const hasCategories = categories.length > 0;
-  const products = productsQuery.data?.items ?? [];
+  const products = useMemo(() => productsQuery.data?.items ?? [], [productsQuery.data?.items]);
   const total = productsQuery.data?.total ?? 0;
   const lowStockOnly = searchParams.get("lowStock") === "true";
   const lowStockProductIds = useMemo(() => {

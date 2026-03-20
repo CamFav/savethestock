@@ -29,7 +29,7 @@ export function DeleteCategoryDialog({
         <DialogHeader>
           <DialogTitle>Delete category</DialogTitle>
           <DialogDescription>
-            This will archive the category{categoryName ? ` \"${categoryName}\"` : ""}. You can continue using
+            This will archive the category{categoryName ? ` "${categoryName}"` : ""}. You can continue using
             existing data, but this category will no longer appear in active lists.
           </DialogDescription>
         </DialogHeader>
