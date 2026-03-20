@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SaveTheStock.Api.Contracts.WasteSessions;
 using SaveTheStock.Application.Catalog.WasteSessions.AddLine;
 using SaveTheStock.Application.Catalog.WasteSessions.Create;
+using SaveTheStock.Application.Catalog.WasteSessions.Delete;
 using SaveTheStock.Application.Catalog.WasteSessions.GetById;
 using SaveTheStock.Application.Catalog.WasteSessions.GetPaged;
 using SaveTheStock.Application.Catalog.WasteSessions.Post;
@@ -20,6 +21,7 @@ public sealed class WasteSessionsController : ControllerBase
     private readonly CreateWasteSessionUseCase _create;
     private readonly GetWasteSessionsPagedUseCase _getPaged;
     private readonly GetWasteSessionByIdUseCase _getById;
+    private readonly DeleteWasteSessionUseCase _delete;
     private readonly AddWasteLineUseCase _addLine;
     private readonly UpdateWasteLineUseCase _updateLine;
     private readonly RemoveWasteLineUseCase _removeLine;
@@ -29,6 +31,7 @@ public sealed class WasteSessionsController : ControllerBase
         CreateWasteSessionUseCase create,
         GetWasteSessionsPagedUseCase getPaged,
         GetWasteSessionByIdUseCase getById,
+        DeleteWasteSessionUseCase delete,
         AddWasteLineUseCase addLine,
         UpdateWasteLineUseCase updateLine,
         RemoveWasteLineUseCase removeLine,
@@ -37,6 +40,7 @@ public sealed class WasteSessionsController : ControllerBase
         _create = create;
         _getPaged = getPaged;
         _getById = getById;
+        _delete = delete;
         _addLine = addLine;
         _updateLine = updateLine;
         _removeLine = removeLine;
@@ -147,6 +151,25 @@ public sealed class WasteSessionsController : ControllerBase
         catch (InvalidOperationException ex) when (ex.Message == "not_found")
         {
             return NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpDelete("{id:guid}")]
+    [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _delete.ExecuteAsync(id, cancellationToken);
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
         }
         catch (InvalidOperationException ex)
         {

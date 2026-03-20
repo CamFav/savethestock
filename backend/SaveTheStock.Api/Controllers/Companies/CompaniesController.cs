@@ -6,6 +6,7 @@ using SaveTheStock.Infrastructure.Persistence;
 using SaveTheStock.Api.Contracts.Companies;
 using SaveTheStock.Application.Common.Interfaces;
 using SaveTheStock.Application.Common.Security;
+using SaveTheStock.Application.Companies.Delete;
 
 namespace SaveTheStock.Api.Controllers;
 
@@ -18,13 +19,16 @@ public class CompaniesController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
     private readonly ICurrentUser _currentUser;
+    private readonly DeleteCompanyUseCase _deleteCompany;
 
     public CompaniesController(
         AppDbContext dbContext,
-        ICurrentUser currentUser)
+        ICurrentUser currentUser,
+        DeleteCompanyUseCase deleteCompany)
     {
         _dbContext = dbContext;
         _currentUser = currentUser;
+        _deleteCompany = deleteCompany;
     }
 
     private static CompanyResponse MapToResponse(Company company)
@@ -130,5 +134,22 @@ public class CompaniesController : ControllerBase
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return Ok(MapToResponse(company));
+    }
+
+    [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
+    [HttpDelete("/api/company")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> DeleteCompany(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _deleteCompany.ExecuteAsync(cancellationToken);
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
     }
 }

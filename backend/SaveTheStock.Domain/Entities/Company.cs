@@ -11,4 +11,5 @@ public class Company
     public DateTime CreatedAt { get; set; }
 
     public ICollection<Account> Accounts { get; set; } = new List<Account>();
+    public ICollection<Invitation> Invitations { get; set; } = new List<Invitation>();
 }

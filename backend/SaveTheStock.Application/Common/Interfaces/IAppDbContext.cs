@@ -16,10 +16,14 @@ public interface IAppDbContext
 
     // Accounts
     void AddAccount(Account account);
+    void AddInvitation(Invitation invitation);
+    void RemoveAccount(Account account);
 
     Task<Account?> FindActiveAccountByNormalizedEmailAsync(string normalizedEmail, CancellationToken cancellationToken);
     Task<Account?> FindAccountByIdAndCompanyIdAsync(Guid accountId, Guid companyId, CancellationToken cancellationToken);
     Task<bool> AccountEmailExistsAsync(string normalizedEmail, CancellationToken cancellationToken);
+    Task<int> CountActiveOwnersAsync(Guid companyId, CancellationToken cancellationToken);
+    Task<bool> AccountHasBusinessHistoryAsync(Guid companyId, Guid accountId, CancellationToken cancellationToken);
 
     // Catalog - Categories
     void AddCategory(Category category);
@@ -129,6 +133,7 @@ public interface IAppDbContext
 
     // Waste sessions
     void AddWasteSession(WasteSession wasteSession);
+    void RemoveWasteSession(WasteSession wasteSession);
     void AddWasteLine(WasteLine wasteLine);
     void RemoveWasteLine(WasteLine wasteLine);
 
@@ -240,6 +245,7 @@ public interface IAppDbContext
         Func<CancellationToken, Task> operation,
         IsolationLevel isolationLevel,
         CancellationToken cancellationToken);
+    Task DeleteCompanyDataAsync(Guid companyId, CancellationToken cancellationToken);
 
     // Dashboard
     Task<(decimal StockUsableValue, decimal StockExpiredValue, decimal StockTotalValue)> GetStockValuesAsync(

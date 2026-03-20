@@ -30,6 +30,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<WasteLine> WasteLines => Set<WasteLine>();
     public DbSet<Inventory> Inventories => Set<Inventory>();
     public DbSet<InventoryLine> InventoryLines => Set<InventoryLine>();
+    public DbSet<Invitation> Invitations => Set<Invitation>();
 
     public void AddCompany(Company company)
     {
@@ -39,6 +40,16 @@ public class AppDbContext : DbContext, IAppDbContext
     public void AddAccount(Account account)
     {
         Accounts.Add(account);
+    }
+
+    public void RemoveAccount(Account account)
+    {
+        Accounts.Remove(account);
+    }
+
+    public void AddInvitation(Invitation invitation)
+    {
+        Invitations.Add(invitation);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -70,6 +81,50 @@ public class AppDbContext : DbContext, IAppDbContext
             .FirstOrDefaultAsync(a =>
                 a.Id == accountId &&
                 a.CompanyId == companyId,
+                cancellationToken);
+    }
+
+    public Task<int> CountActiveOwnersAsync(Guid companyId, CancellationToken cancellationToken)
+    {
+        return Accounts
+            .AsNoTracking()
+            .CountAsync(a =>
+                a.CompanyId == companyId &&
+                a.DeletedAt == null &&
+                a.IsActive &&
+                a.Role == "Owner",
+                cancellationToken);
+    }
+
+    public async Task<bool> AccountHasBusinessHistoryAsync(Guid companyId, Guid accountId, CancellationToken cancellationToken)
+    {
+        var hasReception = await Receptions
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .AnyAsync(r => r.CompanyId == companyId && r.AccountId == accountId, cancellationToken);
+
+        if (hasReception)
+        {
+            return true;
+        }
+
+        var hasInventory = await Inventories
+            .AsNoTracking()
+            .AnyAsync(i =>
+                i.CompanyId == companyId &&
+                (i.AccountId == accountId || i.PostedByAccountId == accountId),
+                cancellationToken);
+
+        if (hasInventory)
+        {
+            return true;
+        }
+
+        return await WasteSessions
+            .AsNoTracking()
+            .AnyAsync(ws =>
+                ws.CompanyId == companyId &&
+                (ws.AccountId == accountId || ws.PostedByAccountId == accountId),
                 cancellationToken);
     }
 
@@ -401,6 +456,11 @@ public class AppDbContext : DbContext, IAppDbContext
     public void AddWasteSession(WasteSession wasteSession)
     {
         WasteSessions.Add(wasteSession);
+    }
+
+    public void RemoveWasteSession(WasteSession wasteSession)
+    {
+        WasteSessions.Remove(wasteSession);
     }
 
     public void AddWasteLine(WasteLine wasteLine)
@@ -1365,5 +1425,79 @@ public class AppDbContext : DbContext, IAppDbContext
         await using var transaction = await Database.BeginTransactionAsync(isolationLevel, cancellationToken);
         await operation(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+    }
+
+    public async Task DeleteCompanyDataAsync(Guid companyId, CancellationToken cancellationToken)
+    {
+        await ExecuteInTransactionAsync(async ct =>
+        {
+            var inventoryLines = await InventoryLines
+                .Where(x => x.CompanyId == companyId)
+                .ToListAsync(ct);
+            InventoryLines.RemoveRange(inventoryLines);
+
+            var wasteLines = await WasteLines
+                .Where(x => x.CompanyId == companyId)
+                .ToListAsync(ct);
+            WasteLines.RemoveRange(wasteLines);
+
+            var lots = await Lots
+                .IgnoreQueryFilters()
+                .Where(x => x.CompanyId == companyId)
+                .ToListAsync(ct);
+            Lots.RemoveRange(lots);
+
+            var inventories = await Inventories
+                .Where(x => x.CompanyId == companyId)
+                .ToListAsync(ct);
+            Inventories.RemoveRange(inventories);
+
+            var wasteSessions = await WasteSessions
+                .Where(x => x.CompanyId == companyId)
+                .ToListAsync(ct);
+            WasteSessions.RemoveRange(wasteSessions);
+
+            var receptions = await Receptions
+                .IgnoreQueryFilters()
+                .Where(x => x.CompanyId == companyId)
+                .ToListAsync(ct);
+            Receptions.RemoveRange(receptions);
+
+            var products = await Products
+                .IgnoreQueryFilters()
+                .Where(x => x.CompanyId == companyId)
+                .ToListAsync(ct);
+            Products.RemoveRange(products);
+
+            var categories = await Categories
+                .IgnoreQueryFilters()
+                .Where(x => x.CompanyId == companyId)
+                .ToListAsync(ct);
+            Categories.RemoveRange(categories);
+
+            var suppliers = await Suppliers
+                .IgnoreQueryFilters()
+                .Where(x => x.CompanyId == companyId)
+                .ToListAsync(ct);
+            Suppliers.RemoveRange(suppliers);
+
+            var invitations = await Invitations
+                .Where(x => x.CompanyId == companyId)
+                .ToListAsync(ct);
+            Invitations.RemoveRange(invitations);
+
+            var accounts = await Accounts
+                .Where(x => x.CompanyId == companyId)
+                .ToListAsync(ct);
+            Accounts.RemoveRange(accounts);
+
+            var company = await Companies.FirstOrDefaultAsync(x => x.Id == companyId, ct);
+            if (company is not null)
+            {
+                Companies.Remove(company);
+            }
+
+            await SaveChangesAsync(ct);
+        }, IsolationLevel.Serializable, cancellationToken);
     }
 }

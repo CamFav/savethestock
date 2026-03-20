@@ -14,6 +14,7 @@ using System.Text;
 using SaveTheStock.Application.Accounts.InviteAccount;
 using SaveTheStock.Application.Accounts.ChangeMyPassword;
 using SaveTheStock.Application.Accounts.DeleteMyAccount;
+using SaveTheStock.Application.Accounts.Delete;
 using SaveTheStock.Application.Authentication.Login;
 using SaveTheStock.Application.Authentication.Register;
 using SaveTheStock.Application.Catalog.Categories.Create;
@@ -42,6 +43,7 @@ using SaveTheStock.Application.Directory.Suppliers.GetById;
 using SaveTheStock.Application.Directory.Suppliers.GetPaged;
 using SaveTheStock.Application.Directory.Suppliers.Update;
 using SaveTheStock.Application.Catalog.WasteSessions.Create;
+using SaveTheStock.Application.Catalog.WasteSessions.Delete;
 using SaveTheStock.Application.Catalog.WasteSessions.GetById;
 using SaveTheStock.Application.Catalog.WasteSessions.GetPaged;
 using SaveTheStock.Application.Catalog.WasteSessions.AddLine;
@@ -58,6 +60,7 @@ using SaveTheStock.Application.Catalog.Inventories.Post;
 using SaveTheStock.Application.Catalog.Dashboard;
 using SaveTheStock.Application.Catalog.Operational;
 using SaveTheStock.Api.Options;
+using SaveTheStock.Application.Companies.Delete;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -165,6 +168,36 @@ builder.Services
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromSeconds(30)
         };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var accountClaim = context.Principal?.FindFirst("account_id")?.Value;
+                var companyClaim = context.Principal?.FindFirst("company_id")?.Value;
+
+                if (!Guid.TryParse(accountClaim, out var accountId) || !Guid.TryParse(companyClaim, out var companyId))
+                {
+                    context.Fail("Invalid authentication claims.");
+                    return;
+                }
+
+                var db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                var isStillActive = await db.Accounts
+                    .AsNoTracking()
+                    .AnyAsync(a =>
+                        a.Id == accountId &&
+                        a.CompanyId == companyId &&
+                        a.IsActive &&
+                        a.DeletedAt == null,
+                        context.HttpContext.RequestAborted);
+
+                if (!isStillActive)
+                {
+                    context.Fail("Account is no longer active.");
+                }
+            }
+        };
     });
 
 // authorization policies
@@ -180,7 +213,9 @@ builder.Services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbConte
 // use cases
 builder.Services.AddScoped<InviteAccountUseCase>();
 builder.Services.AddScoped<ChangeMyPasswordUseCase>();
+builder.Services.AddScoped<DeleteAccountUseCase>();
 builder.Services.AddScoped<DeleteMyAccountUseCase>();
+builder.Services.AddScoped<DeleteCompanyUseCase>();
 builder.Services.AddScoped<LoginUseCase>();
 builder.Services.AddScoped<RegisterUseCase>();
 // categories use cases
@@ -217,6 +252,7 @@ builder.Services.AddScoped<DeleteSupplierUseCase>();
 builder.Services.AddScoped<CreateWasteSessionUseCase>();
 builder.Services.AddScoped<GetWasteSessionByIdUseCase>();
 builder.Services.AddScoped<GetWasteSessionsPagedUseCase>();
+builder.Services.AddScoped<DeleteWasteSessionUseCase>();
 builder.Services.AddScoped<AddWasteLineUseCase>();
 builder.Services.AddScoped<UpdateWasteLineUseCase>();
 builder.Services.AddScoped<RemoveWasteLineUseCase>();

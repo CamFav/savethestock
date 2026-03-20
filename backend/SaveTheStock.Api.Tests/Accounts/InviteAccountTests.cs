@@ -55,7 +55,7 @@ public sealed class InviteAccountTests : IClassFixture<SaveTheStockApiFactory>
     }
 
     [Fact]
-    public async Task Invite_ShouldStillRejectSoftDeletedEmail_WhenUniquenessIsStrict()
+    public async Task Invite_ShouldAllowReuseEmail_WhenDeletedAccountHasNoBusinessHistory()
     {
         var email = $"deleted-global-{Guid.NewGuid():N}@test.com";
 
@@ -90,7 +90,7 @@ public sealed class InviteAccountTests : IClassFixture<SaveTheStockApiFactory>
             "/api/accounts/invite",
             new InviteAccountRequest(email, "Member B"));
 
-        Assert.Equal(HttpStatusCode.BadRequest, duplicateInvite.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, duplicateInvite.StatusCode);
     }
 
     [Fact]
