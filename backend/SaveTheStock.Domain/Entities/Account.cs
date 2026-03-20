@@ -8,6 +8,8 @@ namespace SaveTheStock.Domain.Entities;
 /// </summary>
 public class Account
 {
+    public const string DeletedDisplayName = "DeletedAccount";
+
     public Guid Id { get; set; }
 
     public string Email { get; set; } = string.Empty;

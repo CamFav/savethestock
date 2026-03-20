@@ -27,13 +27,25 @@ internal static class AccountsAuthTestHelper
     /// <returns>The response details of the created company.</returns>
     public static async Task<CompanyResponse> CreateCompanyAsync(HttpClient client, string name)
     {
-        var response = await client.PostAsJsonAsync("/api/companies", new CreateCompanyRequest { Name = name });
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var unique = Guid.NewGuid().ToString("N")[..8];
+        var registerRequest = new RegisterRequest(
+            CompanyName: name,
+            OwnerDisplayName: $"Owner {unique}",
+            OwnerEmail: $"owner-{unique}@test.local",
+            Password: "Password123!");
 
-        var company = await response.Content.ReadFromJsonAsync<CompanyResponse>();
-        Assert.NotNull(company);
+        var response = await client.PostAsJsonAsync("/api/auth/register", registerRequest);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        return company!;
+        var payload = await response.Content.ReadFromJsonAsync<LoginResponse>();
+        Assert.NotNull(payload);
+
+        return new CompanyResponse
+        {
+            Id = payload!.CompanyId,
+            Name = name,
+            CreatedAt = DateTime.UtcNow
+        };
     }
 
     /// <summary>

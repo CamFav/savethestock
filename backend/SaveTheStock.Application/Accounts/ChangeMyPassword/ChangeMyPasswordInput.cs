@@ -4,5 +4,7 @@ namespace SaveTheStock.Application.Accounts.ChangeMyPassword;
 /// Input for the ChangeMyPasswordUseCase.
 /// </summary>
 public sealed record ChangeMyPasswordInput(
-    string NewPassword
+    string CurrentPassword,
+    string NewPassword,
+    string ConfirmNewPassword
 );

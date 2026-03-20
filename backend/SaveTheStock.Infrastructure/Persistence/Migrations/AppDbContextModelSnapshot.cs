@@ -82,6 +82,48 @@ namespace SaveTheStock.Infrastructure.Persistence.Migrations
                     b.ToTable("account", (string)null);
                 });
 
+            modelBuilder.Entity("SaveTheStock.Domain.Entities.Category", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_categories");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_categories_company_id_id");
+
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("ix_categories_company_id");
+
+                    b.HasIndex("CompanyId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_categories_company_id_name")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.ToTable("categories", (string)null);
+                });
+
             modelBuilder.Entity("SaveTheStock.Domain.Entities.Company", b =>
                 {
                     b.Property<Guid>("Id")
@@ -105,6 +147,542 @@ namespace SaveTheStock.Infrastructure.Persistence.Migrations
                     b.ToTable("company", (string)null);
                 });
 
+            modelBuilder.Entity("SaveTheStock.Domain.Entities.Inventory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_id");
+
+                    b.Property<string>("Comment")
+                        .HasColumnType("text")
+                        .HasColumnName("comment");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("InventoryDate")
+                        .HasColumnType("date")
+                        .HasColumnName("inventory_date");
+
+                    b.Property<DateTime?>("PostedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("posted_at");
+
+                    b.Property<Guid?>("PostedByAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("posted_by_account_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_inventory");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_inventory_company_id_id");
+
+                    b.HasIndex("CompanyId", "InventoryDate")
+                        .HasDatabaseName("ix_inventory_company_id_inventory_date");
+
+                    b.HasIndex("CompanyId", "Status")
+                        .HasDatabaseName("ix_inventory_company_id_status");
+
+                    b.ToTable("inventory", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_inventory_status", "status IN ('DRAFT','POSTED','CANCELLED')");
+                        });
+                });
+
+            modelBuilder.Entity("SaveTheStock.Domain.Entities.InventoryLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<Guid>("InventoryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("inventory_id");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<decimal>("RealQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("numeric(18,3)")
+                        .HasColumnName("real_quantity");
+
+                    b.Property<decimal>("TheoreticalQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("numeric(18,3)")
+                        .HasColumnName("theoretical_quantity");
+
+                    b.HasKey("Id")
+                        .HasName("pk_inventory_line");
+
+                    b.HasIndex("CompanyId", "InventoryId")
+                        .HasDatabaseName("ix_inventory_line_company_id_inventory_id");
+
+                    b.HasIndex("CompanyId", "ProductId")
+                        .HasDatabaseName("ix_inventory_line_company_id_product_id");
+
+                    b.HasIndex("CompanyId", "InventoryId", "ProductId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_inventory_line_company_id_inventory_id_product_id");
+
+                    b.ToTable("inventory_line", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_inventory_line_real_non_negative", "real_quantity >= 0");
+
+                            t.HasCheckConstraint("ck_inventory_line_theoretical_non_negative", "theoretical_quantity >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("SaveTheStock.Domain.Entities.Invitation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("AcceptedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("accepted_at");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedByAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_account_id");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("display_name");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("email");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("role");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("token");
+
+                    b.HasKey("Id")
+                        .HasName("pk_invitation");
+
+                    b.HasIndex("CreatedByAccountId")
+                        .HasDatabaseName("ix_invitation_created_by_account_id");
+
+                    b.HasIndex("Token")
+                        .IsUnique()
+                        .HasDatabaseName("ix_invitation_token");
+
+                    b.HasIndex("CompanyId", "Email", "Status")
+                        .HasDatabaseName("ix_invitation_company_id_email_status");
+
+                    b.ToTable("invitation", (string)null);
+                });
+
+            modelBuilder.Entity("SaveTheStock.Domain.Entities.Lot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<DateOnly?>("ExpiryDate")
+                        .HasColumnType("date")
+                        .HasColumnName("expiry_date");
+
+                    b.Property<bool>("HasIssue")
+                        .HasColumnType("boolean")
+                        .HasColumnName("has_issue");
+
+                    b.Property<string>("IssueNote")
+                        .HasColumnType("text")
+                        .HasColumnName("issue_note");
+
+                    b.Property<string>("LotCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("lot_code");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
+                    b.Property<decimal>("QuantityInitial")
+                        .HasColumnType("numeric")
+                        .HasColumnName("quantity_initial");
+
+                    b.Property<decimal>("QuantityRemaining")
+                        .HasColumnType("numeric")
+                        .HasColumnName("quantity_remaining");
+
+                    b.Property<Guid?>("ReceptionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reception_id");
+
+                    b.Property<decimal>("UnitCost")
+                        .HasColumnType("numeric")
+                        .HasColumnName("unit_cost");
+
+                    b.HasKey("Id")
+                        .HasName("pk_lots");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_lots_company_id_id");
+
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("ix_lots_company_id");
+
+                    b.HasIndex("CompanyId", "ProductId")
+                        .HasDatabaseName("ix_lots_company_id_product_id");
+
+                    b.HasIndex("CompanyId", "ReceptionId")
+                        .HasDatabaseName("ix_lots_company_id_reception_id");
+
+                    b.ToTable("lots", (string)null);
+                });
+
+            modelBuilder.Entity("SaveTheStock.Domain.Entities.Product", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AlertThreshold")
+                        .HasColumnType("integer")
+                        .HasColumnName("alert_threshold");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("category_id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("unit");
+
+                    b.HasKey("Id")
+                        .HasName("pk_products");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_products_company_id_id");
+
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("ix_products_company_id");
+
+                    b.HasIndex("CompanyId", "CategoryId")
+                        .HasDatabaseName("ix_products_company_id_category_id");
+
+                    b.HasIndex("CompanyId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_products_company_id_name")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.ToTable("products", (string)null);
+                });
+
+            modelBuilder.Entity("SaveTheStock.Domain.Entities.Reception", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<bool>("HasIssue")
+                        .HasColumnType("boolean")
+                        .HasColumnName("has_issue");
+
+                    b.Property<string>("IssueNote")
+                        .HasColumnType("text")
+                        .HasColumnName("issue_note");
+
+                    b.Property<DateOnly>("ReceptionDate")
+                        .HasColumnType("date")
+                        .HasColumnName("reception_date");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("reference");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid?>("SupplierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("supplier_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_receptions");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_receptions_company_id_id");
+
+                    b.HasIndex("AccountId")
+                        .HasDatabaseName("ix_receptions_account_id");
+
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("ix_receptions_company_id");
+
+                    b.HasIndex("CompanyId", "ReceptionDate")
+                        .HasDatabaseName("ix_receptions_company_id_reception_date");
+
+                    b.ToTable("receptions", (string)null);
+                });
+
+            modelBuilder.Entity("SaveTheStock.Domain.Entities.Supplier", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_suppliers");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_suppliers_company_id_id");
+
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("ix_suppliers_company_id");
+
+                    b.HasIndex("CompanyId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_suppliers_company_id_name")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.ToTable("suppliers", (string)null);
+                });
+
+            modelBuilder.Entity("SaveTheStock.Domain.Entities.WasteLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<Guid>("LotId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lot_id");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("numeric(18,3)")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("reason");
+
+                    b.Property<Guid>("WasteSessionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("waste_session_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_waste_line");
+
+                    b.HasIndex("CompanyId", "LotId")
+                        .HasDatabaseName("ix_waste_line_company_id_lot_id");
+
+                    b.HasIndex("CompanyId", "WasteSessionId")
+                        .HasDatabaseName("ix_waste_line_company_id_waste_session_id");
+
+                    b.ToTable("waste_line", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_waste_line_quantity_positive", "quantity > 0");
+
+                            t.HasCheckConstraint("ck_waste_line_reason_not_empty", "length(trim(reason)) > 0");
+                        });
+                });
+
+            modelBuilder.Entity("SaveTheStock.Domain.Entities.WasteSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_id");
+
+                    b.Property<string>("Comment")
+                        .HasColumnType("text")
+                        .HasColumnName("comment");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("PostedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("posted_at");
+
+                    b.Property<Guid?>("PostedByAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("posted_by_account_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.Property<DateOnly>("WasteDate")
+                        .HasColumnType("date")
+                        .HasColumnName("waste_date");
+
+                    b.HasKey("Id")
+                        .HasName("pk_waste_session");
+
+                    b.HasAlternateKey("CompanyId", "Id")
+                        .HasName("ak_waste_sessions_company_id_id");
+
+                    b.HasIndex("CompanyId", "Status")
+                        .HasDatabaseName("ix_waste_session_company_id_status");
+
+                    b.HasIndex("CompanyId", "WasteDate")
+                        .HasDatabaseName("ix_waste_session_company_id_waste_date");
+
+                    b.ToTable("waste_session", (string)null);
+                });
+
             modelBuilder.Entity("SaveTheStock.Domain.Entities.Account", b =>
                 {
                     b.HasOne("SaveTheStock.Domain.Entities.Company", "Company")
@@ -117,9 +695,136 @@ namespace SaveTheStock.Infrastructure.Persistence.Migrations
                     b.Navigation("Company");
                 });
 
+            modelBuilder.Entity("SaveTheStock.Domain.Entities.InventoryLine", b =>
+                {
+                    b.HasOne("SaveTheStock.Domain.Entities.Inventory", "Inventory")
+                        .WithMany("Lines")
+                        .HasForeignKey("CompanyId", "InventoryId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_inventory_line_inventory_company_id_inventory_id");
+
+                    b.HasOne("SaveTheStock.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "ProductId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_inventory_line_products_company_id_product_id");
+
+                    b.Navigation("Inventory");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("SaveTheStock.Domain.Entities.Invitation", b =>
+                {
+                    b.HasOne("SaveTheStock.Domain.Entities.Company", "Company")
+                        .WithMany("Invitations")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_invitation_company_company_id");
+
+                    b.HasOne("SaveTheStock.Domain.Entities.Account", "CreatedByAccount")
+                        .WithMany()
+                        .HasForeignKey("CreatedByAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_invitation_account_created_by_account_id");
+
+                    b.Navigation("Company");
+
+                    b.Navigation("CreatedByAccount");
+                });
+
+            modelBuilder.Entity("SaveTheStock.Domain.Entities.Lot", b =>
+                {
+                    b.HasOne("SaveTheStock.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "ProductId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_lots_products_company_id_product_id");
+
+                    b.HasOne("SaveTheStock.Domain.Entities.Reception", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "ReceptionId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_lots_receptions_company_id_reception_id");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("SaveTheStock.Domain.Entities.Product", b =>
+                {
+                    b.HasOne("SaveTheStock.Domain.Entities.Category", "Category")
+                        .WithMany("Products")
+                        .HasForeignKey("CompanyId", "CategoryId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_products_categories_company_id_category_id");
+
+                    b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("SaveTheStock.Domain.Entities.Reception", b =>
+                {
+                    b.HasOne("SaveTheStock.Domain.Entities.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_receptions_accounts_account_id");
+
+                    b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("SaveTheStock.Domain.Entities.WasteLine", b =>
+                {
+                    b.HasOne("SaveTheStock.Domain.Entities.Lot", "Lot")
+                        .WithMany()
+                        .HasForeignKey("CompanyId", "LotId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_waste_line_lots_company_id_lot_id");
+
+                    b.HasOne("SaveTheStock.Domain.Entities.WasteSession", "WasteSession")
+                        .WithMany("Lines")
+                        .HasForeignKey("CompanyId", "WasteSessionId")
+                        .HasPrincipalKey("CompanyId", "Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_waste_line_waste_sessions_company_id_waste_session_id");
+
+                    b.Navigation("Lot");
+
+                    b.Navigation("WasteSession");
+                });
+
+            modelBuilder.Entity("SaveTheStock.Domain.Entities.Category", b =>
+                {
+                    b.Navigation("Products");
+                });
+
             modelBuilder.Entity("SaveTheStock.Domain.Entities.Company", b =>
                 {
                     b.Navigation("Accounts");
+
+                    b.Navigation("Invitations");
+                });
+
+            modelBuilder.Entity("SaveTheStock.Domain.Entities.Inventory", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("SaveTheStock.Domain.Entities.WasteSession", b =>
+                {
+                    b.Navigation("Lines");
                 });
 #pragma warning restore 612, 618
         }

@@ -7,7 +7,15 @@ namespace SaveTheStock.Api.Contracts.Accounts;
 /// </summary>
 public sealed record ChangeMyPasswordRequest(
     [Required]
+    [MaxLength(255)]
+    string CurrentPassword,
+
+    [Required]
     [MinLength(8)]
     [MaxLength(255)]
-    string NewPassword
+    string NewPassword,
+
+    [Required]
+    [MaxLength(255)]
+    string ConfirmNewPassword
 );

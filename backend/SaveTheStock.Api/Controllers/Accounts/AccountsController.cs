@@ -12,6 +12,7 @@ using System.Security.Cryptography;
 using SaveTheStock.Application.Accounts.InviteAccount;
 using SaveTheStock.Application.Accounts.ChangeMyPassword;
 using SaveTheStock.Application.Accounts.DeleteMyAccount;
+using SaveTheStock.Application.Accounts.Delete;
 
 namespace SaveTheStock.Api.Controllers.Accounts;
 
@@ -33,6 +34,7 @@ public sealed class AccountsController : ControllerBase
     private readonly InviteAccountUseCase _inviteAccount;
     private readonly ChangeMyPasswordUseCase _changeMyPassword;
     private readonly DeleteMyAccountUseCase _deleteMyAccount;
+    private readonly DeleteAccountUseCase _deleteAccount;
 
     public AccountsController(
         AppDbContext dbContext,
@@ -40,7 +42,8 @@ public sealed class AccountsController : ControllerBase
         ICurrentUser currentUser,
         InviteAccountUseCase inviteAccount,
         ChangeMyPasswordUseCase changeMyPassword,
-        DeleteMyAccountUseCase deleteMyAccount)
+        DeleteMyAccountUseCase deleteMyAccount,
+        DeleteAccountUseCase deleteAccount)
     {
         _dbContext = dbContext;
         _passwordHasher = passwordHasher;
@@ -48,6 +51,7 @@ public sealed class AccountsController : ControllerBase
         _inviteAccount = inviteAccount;
         _changeMyPassword = changeMyPassword;
         _deleteMyAccount = deleteMyAccount;
+        _deleteAccount = deleteAccount;
     }
 
     /// <summary>
@@ -83,6 +87,35 @@ public sealed class AccountsController : ControllerBase
         {
             return BadRequest(ex.Message);
         }
+    }
+
+    /// <summary>
+    /// [GET] Retrieves the current account.
+    /// </summary>
+    [HttpGet("me")]
+    [ProducesResponseType(typeof(AccountResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AccountResponse>> GetMe(CancellationToken cancellationToken)
+    {
+        var companyId = _currentUser.CompanyId;
+        var accountId = _currentUser.AccountId;
+
+        if (companyId is null || accountId is null)
+            return Unauthorized();
+
+        var account = await _dbContext.Accounts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a =>
+                a.Id == accountId.Value &&
+                a.CompanyId == companyId.Value &&
+                a.DeletedAt == null,
+                cancellationToken);
+
+        if (account is null)
+            return NotFound();
+
+        return Ok(ToResponse(account));
     }
 
     /// <summary>
@@ -213,7 +246,7 @@ public sealed class AccountsController : ControllerBase
     }
 
     /// <summary>
-    /// [DELETE] Soft deletes an account.
+    /// [DELETE] Deletes a member account.
     /// </summary>
     [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
     [HttpDelete("{id:guid}")]
@@ -225,37 +258,33 @@ public sealed class AccountsController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var companyId = _currentUser.CompanyId;
-        if (companyId is null)
-            return Unauthorized();
-
-        var account = await _dbContext.Accounts
-            .FirstOrDefaultAsync(a =>
-                a.Id == id &&
-                a.CompanyId == companyId.Value,
-                cancellationToken);
-
-        if (account is null)
-            return NotFound();
-
-        if (account.Role == "Owner")
-            return BadRequest("Owner account cannot be deleted.");
-
-        if (account.DeletedAt != null)
+        try
+        {
+            await _deleteAccount.ExecuteDeleteMemberAsync(id, cancellationToken);
             return NoContent();
-
-        account.DeletedAt = DateTime.UtcNow;
-        account.IsActive = false;
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        return NoContent();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "not_found")
+        {
+            return NotFound();
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "last_owner")
+        {
+            return BadRequest("Impossible de supprimer le dernier OWNER.");
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "owner_delete_not_allowed")
+        {
+            return BadRequest("Supprimez la société pour retirer le OWNER principal.");
+        }
     }
 
     /// <summary>
-    /// [PUT] Changes the current account password.
+    /// [POST] Changes the current account password.
     /// </summary>
-    [HttpPut("me/password")]
+    [HttpPost("me/change-password")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -263,11 +292,32 @@ public sealed class AccountsController : ControllerBase
     public async Task<IActionResult> ChangeMyPassword(
         [FromBody] ChangeMyPasswordRequest request,
         CancellationToken cancellationToken)
+        => await ChangeMyPasswordInternal(request, cancellationToken);
+
+    /// <summary>
+    /// [PUT] Legacy route kept for compatibility.
+    /// </summary>
+    [HttpPut("me/password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ChangeMyPasswordLegacy(
+        [FromBody] ChangeMyPasswordRequest request,
+        CancellationToken cancellationToken)
+        => await ChangeMyPasswordInternal(request, cancellationToken);
+
+    private async Task<IActionResult> ChangeMyPasswordInternal(
+        ChangeMyPasswordRequest request,
+        CancellationToken cancellationToken)
     {
         try
         {
             await _changeMyPassword.ExecuteAsync(
-                new ChangeMyPasswordInput(request.NewPassword),
+                new ChangeMyPasswordInput(
+                    request.CurrentPassword,
+                    request.NewPassword,
+                    request.ConfirmNewPassword),
                 cancellationToken);
 
             return NoContent();
@@ -275,6 +325,34 @@ public sealed class AccountsController : ControllerBase
         catch (UnauthorizedAccessException)
         {
             return Unauthorized();
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "current_password_required")
+        {
+            return BadRequest("Le mot de passe actuel est requis.");
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "new_password_required")
+        {
+            return BadRequest("Le nouveau mot de passe est requis.");
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "new_password_too_short")
+        {
+            return BadRequest("Le nouveau mot de passe doit contenir au moins 8 caractères.");
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "confirm_password_required")
+        {
+            return BadRequest("La confirmation du nouveau mot de passe est requise.");
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "password_confirmation_mismatch")
+        {
+            return BadRequest("La confirmation du nouveau mot de passe ne correspond pas.");
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "invalid_current_password")
+        {
+            return BadRequest("Le mot de passe actuel est incorrect.");
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "same_password_not_allowed")
+        {
+            return BadRequest("Le nouveau mot de passe doit être différent de l'ancien.");
         }
     }
 
@@ -327,6 +405,10 @@ public sealed class AccountsController : ControllerBase
         catch (UnauthorizedAccessException)
         {
             return Unauthorized();
+        }
+        catch (InvalidOperationException ex) when (ex.Message == "owner_self_delete_not_allowed")
+        {
+            return BadRequest("Un OWNER ne peut pas supprimer son compte directement. Supprimez la société si nécessaire.");
         }
     }
 }
