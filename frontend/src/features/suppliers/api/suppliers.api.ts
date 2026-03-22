@@ -11,6 +11,8 @@ import type {
 type BackendSupplier = {
   id: string;
   name: string;
+  email?: string | null;
+  phone?: string | null;
 };
 
 type BackendSuppliersListResponse = {
@@ -24,6 +26,8 @@ function mapSupplier(item: BackendSupplier): SupplierListItem {
   return {
     id: item.id,
     name: item.name,
+    email: item.email ?? undefined,
+    phone: item.phone ?? undefined,
   };
 }
 
@@ -52,6 +56,8 @@ export async function getSuppliers(params: SuppliersListParams): Promise<Supplie
 export async function createSupplier(payload: SupplierCreateRequest): Promise<SupplierListItem> {
   const res = await api.post<BackendSupplier>("/api/suppliers", {
     name: payload.name,
+    email: payload.email || null,
+    phone: payload.phone || null,
   });
 
   return mapSupplier(res.data);
@@ -60,6 +66,8 @@ export async function createSupplier(payload: SupplierCreateRequest): Promise<Su
 export async function updateSupplier(payload: SupplierUpdateRequest): Promise<void> {
   await api.put(`/api/suppliers/${payload.id}`, {
     name: payload.name,
+    email: payload.email || null,
+    phone: payload.phone || null,
   });
 }
 

@@ -11,16 +11,21 @@ const timeout = timeoutMsRaw ? Number(timeoutMsRaw) : 15000;
 export type ApiError = {
   status: number;
   message?: string;
+  fieldErrors?: Record<string, string[]>;
 };
 
 type ApiErrorPayload = {
   title?: string;
   detail?: string;
+  errors?: Record<string, string[]>;
 };
 
 export const api = axios.create({
   baseURL,
   timeout,
+  withCredentials: true,
+  xsrfCookieName: "XSRF-TOKEN",
+  xsrfHeaderName: "X-CSRF-TOKEN",
 });
 
 api.interceptors.request.use((config) => {
@@ -45,13 +50,26 @@ api.interceptors.response.use(
       const payload = data as ApiErrorPayload;
       if (typeof payload.title === "string") message = payload.title;
       if (typeof payload.detail === "string" && !message) message = payload.detail;
+      if (payload.errors && typeof payload.errors === "object") {
+        const firstFieldError = Object.values(payload.errors).find(
+          (value) => Array.isArray(value) && value.length > 0 && typeof value[0] === "string",
+        );
+        if (!message && firstFieldError) {
+          message = firstFieldError[0];
+        }
+      }
     }
 
     if (status === 401) {
       useSessionStore.getState().clearSession();
     }
 
-    const apiError: ApiError = { status, message };
+    const fieldErrors =
+      data && typeof data === "object" && "errors" in (data as object)
+        ? ((data as ApiErrorPayload).errors ?? undefined)
+        : undefined;
+
+    const apiError: ApiError = { status, message, fieldErrors };
     return Promise.reject(apiError);
   }
 );

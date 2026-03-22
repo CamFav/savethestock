@@ -10,6 +10,7 @@ import type {
 type BackendReception = {
   id: string;
   supplierId?: string | null;
+  orderId?: string | null;
   receptionDate?: string;
   reference?: string | null;
   status?: string;
@@ -29,6 +30,7 @@ function mapReception(item: BackendReception): ReceptionListItem {
   return {
     id: item.id,
     supplierId: item.supplierId ?? undefined,
+    orderId: item.orderId ?? undefined,
     receptionDate: item.receptionDate,
     createdAt: item.createdAt,
     reference: item.reference ?? undefined,
@@ -40,6 +42,7 @@ function mapReceptionDetail(item: BackendReception): ReceptionDetail {
   return {
     id: item.id,
     supplierId: item.supplierId ?? undefined,
+    orderId: item.orderId ?? undefined,
     receptionDate: item.receptionDate,
     createdAt: item.createdAt,
     reference: item.reference ?? undefined,

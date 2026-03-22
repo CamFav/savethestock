@@ -7,6 +7,7 @@ import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { login } from "@/features/auth/auth.api";
+import { getLoginErrorPresentation } from "@/features/auth/auth.error-messages";
 import type { ApiError } from "@/shared/api/apiClient";
 import { useSessionStore } from "@/shared/auth/sessionStore";
 
@@ -35,6 +36,7 @@ export function LoginPage() {
         jwtToken: auth.jwtToken,
         accountId: auth.accountId,
         companyId: auth.companyId,
+        companyName: auth.companyName,
         role: auth.role,
         displayName: auth.displayName,
       });
@@ -42,7 +44,17 @@ export function LoginPage() {
       navigate("/app", { replace: true });
     } catch (err) {
       const ae = err as ApiError;
-      toast.error(ae.message ?? `Erreur (${ae.status})`);
+      const presentation = getLoginErrorPresentation(ae);
+
+      if (presentation.fieldErrors?.email) {
+        form.setError("email", { message: presentation.fieldErrors.email });
+      }
+
+      if (presentation.fieldErrors?.password) {
+        form.setError("password", { message: presentation.fieldErrors.password });
+      }
+
+      toast.error(presentation.formMessage ?? ae.message ?? `Erreur (${ae.status})`);
     }
   }
 
@@ -66,6 +78,9 @@ export function LoginPage() {
                   placeholder="vous@entreprise.com"
                   {...form.register("email")}
                 />
+                {form.formState.errors.email ? (
+                  <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
+                ) : null}
               </div>
 
               <div className="space-y-2">
@@ -77,6 +92,9 @@ export function LoginPage() {
                   placeholder="••••••••"
                   {...form.register("password")}
                 />
+                {form.formState.errors.password ? (
+                  <p className="text-sm text-destructive">{form.formState.errors.password.message}</p>
+                ) : null}
               </div>
 
               <Button type="submit" className="w-full" disabled={isSubmitting}>

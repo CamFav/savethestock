@@ -1,6 +1,6 @@
 import { useCallback, useDeferredValue, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Building2, CalendarClock, Phone, Plus, ReceiptText, Search, Truck } from "lucide-react";
+import { Building2, CalendarClock, Mail, Phone, Plus, ReceiptText, Search, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +57,32 @@ function formatDate(value?: string): string {
     month: "long",
     year: "numeric",
   });
+}
+
+function getContactLines(supplier: SupplierListItem): string[] {
+  const lines: string[] = [];
+
+  if (supplier.phone) {
+    lines.push(supplier.phone);
+  }
+
+  if (supplier.email) {
+    lines.push(supplier.email);
+  }
+
+  return lines;
+}
+
+function getPurchaseHistoryLabel(receptionsCount: number, latestDate?: string): string {
+  if (receptionsCount <= 0) {
+    return "Aucun achat enregistré";
+  }
+
+  if (!latestDate) {
+    return `${receptionsCount} achat(s) enregistré(s)`;
+  }
+
+  return `${receptionsCount} achat(s), dernier le ${formatDate(latestDate)}`;
 }
 
 export function SuppliersPage() {
@@ -123,7 +149,7 @@ export function SuppliersPage() {
     }
 
     if ((receptionsQuery.data?.total ?? 0) > receptions.length) {
-      notices.push(`Les repères de réception sont calculés sur les ${receptions.length} premières réceptions chargées.`);
+      notices.push(`L'historique d'achats est calculé sur les ${receptions.length} premières réceptions chargées.`);
     }
 
     return notices.join(" ");
@@ -288,6 +314,7 @@ export function SuppliersPage() {
             {filteredSuppliers.map((supplier) => {
               const receptionStats = receptionStatsBySupplier.get(supplier.id);
               const receptionsCount = receptionStats?.count ?? 0;
+              const contactLines = getContactLines(supplier);
 
               return (
                 <article key={supplier.id} className="rounded-[28px] border border-border/80 bg-card p-5 shadow-[0_16px_50px_-38px_rgba(15,23,42,0.38)]">
@@ -319,17 +346,34 @@ export function SuppliersPage() {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="rounded-2xl bg-muted/70 p-3">
                         <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Coordonnées</p>
-                        <p className="mt-2 flex items-center gap-2 text-sm font-medium text-foreground">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          {supplier.phone ?? supplier.email ?? "À compléter"}
-                        </p>
+                        {contactLines.length > 0 ? (
+                          <div className="mt-2 space-y-2 text-sm font-medium text-foreground">
+                            {supplier.phone ? (
+                              <p className="flex items-center gap-2">
+                                <Phone className="h-4 w-4 text-muted-foreground" />
+                                {supplier.phone}
+                              </p>
+                            ) : null}
+                            {supplier.email ? (
+                              <p className="flex items-center gap-2 break-all">
+                                <Mail className="h-4 w-4 text-muted-foreground" />
+                                {supplier.email}
+                              </p>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <p className="mt-2 flex items-center gap-2 text-sm font-medium text-foreground">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            À compléter
+                          </p>
+                        )}
                       </div>
 
                       <div className="rounded-2xl bg-muted/70 p-3">
-                        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Repère achat</p>
-                        <p className="mt-2 flex items-center gap-2 text-sm font-medium text-foreground">
-                          <CalendarClock className="h-4 w-4 text-muted-foreground" />
-                          {receptionsCount > 0 ? "Déjà référencé" : "Nouveau partenaire"}
+                        <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Historique d'achats</p>
+                        <p className="mt-2 flex items-start gap-2 text-sm font-medium text-foreground">
+                          <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                          <span>{getPurchaseHistoryLabel(receptionsCount, receptionStats?.latestDate)}</span>
                         </p>
                       </div>
                     </div>

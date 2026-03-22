@@ -9,7 +9,7 @@ import { ReceptionsPageSkeleton } from "@/features/receptions/components/Recepti
 import { ReceptionsTable } from "@/features/receptions/components/ReceptionsTable";
 import type { ReceptionListItem } from "@/features/receptions/receptions.types";
 import { useSuppliersAll } from "@/features/suppliers/api/suppliers.queries";
-import { useOrdersStore } from "@/features/orders/orders.store";
+import { useRecordOrderReception } from "@/features/orders/api/orders.queries";
 import { Pagination } from "@/shared/ui/pagination";
 import { EmptyStateCard } from "@/shared/ui/empty-state-card";
 import type { ApiError } from "@/shared/api/apiClient";
@@ -43,7 +43,7 @@ export function ReceptionsPage() {
   const receptionsQuery = useReceptionsList(listParams);
   const suppliersQuery = useSuppliersAll();
   const createReceptionMutation = useCreateReception();
-  const attachReceptionToOrder = useOrdersStore((state) => state.attachReceptionToOrder);
+  const recordOrderReceptionMutation = useRecordOrderReception();
   const isDialogOpen = searchParams.get("create") === "1";
   const orderId = searchParams.get("orderId") ?? "";
   const defaultSupplierId = searchParams.get("supplierId") ?? "";
@@ -85,7 +85,11 @@ export function ReceptionsPage() {
           notes: values.notes.trim() || undefined,
         });
         if (orderId) {
-          attachReceptionToOrder(orderId, created.id);
+          await recordOrderReceptionMutation.mutateAsync({
+            orderId,
+            receptionId: created.id,
+            lines: [],
+          });
         }
         toast.success("Réception créée. Ajoutez maintenant les lots reçus.");
         navigate(`/app/receptions/${created.id}`, { replace: true });
@@ -94,7 +98,7 @@ export function ReceptionsPage() {
         toast.error(getApiErrorMessage(apiError, "Impossible de créer la réception. Réessayez."));
       }
     },
-    [attachReceptionToOrder, createReceptionMutation, navigate, orderId],
+    [createReceptionMutation, navigate, orderId, recordOrderReceptionMutation],
   );
 
   const handlePageSizeChange = useCallback((nextPageSize: number) => {

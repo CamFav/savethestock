@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useInventoriesList } from "@/features/inventories/api/inventories.queries";
 import type { Inventory } from "@/features/inventories/api/inventories.types";
 import { useOperationalToday } from "@/features/operational/api/operational.queries";
-import { useOrdersStore } from "@/features/orders/orders.store";
+import { useOrdersAll } from "@/features/orders/api/orders.queries";
 import { formatOrderCurrency, getOrderEstimatedTotal, getOrderStatusLabel, getOrderStatusTone } from "@/features/orders/orders.utils";
 import { useReceptionsList } from "@/features/receptions/api/receptions.queries";
 import type { ReceptionListItem } from "@/features/receptions/receptions.types";
@@ -97,7 +97,8 @@ export function TodayPage() {
   const draftWasteQuery = useWasteSessionsList({ page: 1, pageSize: 5, status: "DRAFT" });
   const recentWasteQuery = useWasteSessionsList({ page: 1, pageSize: 10 });
 
-  const orders = useOrdersStore((state) => state.orders);
+  const ordersQuery = useOrdersAll();
+  const orders = useMemo(() => ordersQuery.data?.items ?? [], [ordersQuery.data?.items]);
 
   useEffect(() => {
     if (todayQuery.isError) {

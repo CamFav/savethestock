@@ -1,6 +1,7 @@
 export type ReceptionListItem = {
   id: string;
   supplierId?: string;
+  orderId?: string;
   supplierName?: string;
   receptionDate?: string;
   createdAt?: string;
@@ -12,6 +13,7 @@ export type ReceptionListItem = {
 export type ReceptionDetail = {
   id: string;
   supplierId?: string;
+  orderId?: string;
   receptionDate?: string;
   createdAt?: string;
   reference?: string;

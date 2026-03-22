@@ -19,7 +19,7 @@ import {
 import type { Product } from "@/features/products/api/products.types";
 import { DeleteProductDialog } from "@/features/products/components/DeleteProductDialog";
 import { ProductDialog } from "@/features/products/components/ProductDialog";
-import { useOrdersStore } from "@/features/orders/orders.store";
+import { useAddProductToDraftOrder, useOrdersAll } from "@/features/orders/api/orders.queries";
 import type { ApiError } from "@/shared/api/apiClient";
 import { isOwnerRole } from "@/shared/auth/roles";
 import { useSessionStore } from "@/shared/auth/sessionStore";
@@ -258,8 +258,8 @@ export function CatalogPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState(searchParams.get("categoryId") ?? "all");
   const [searchValue, setSearchValue] = useState(searchParams.get("q") ?? "");
   const deferredSearchValue = useDeferredValue(searchValue);
-  const orders = useOrdersStore((state) => state.orders);
-  const addProductToDraftOrder = useOrdersStore((state) => state.addProductToDraftOrder);
+  const ordersQuery = useOrdersAll();
+  const addProductToDraftOrderMutation = useAddProductToDraftOrder();
 
   const categoriesQuery = useCategoriesList({ page: 1, pageSize: 200 });
   const productsQuery = useProductsList({ page: 1, pageSize: PRODUCTS_PAGE_SIZE });
@@ -272,6 +272,7 @@ export function CatalogPage() {
   const categories = useMemo(() => categoriesQuery.data?.items ?? [], [categoriesQuery.data?.items]);
   const products = useMemo(() => productsQuery.data?.items ?? [], [productsQuery.data?.items]);
   const lots = useMemo(() => lotsQuery.data?.items ?? [], [lotsQuery.data?.items]);
+  const orders = useMemo(() => ordersQuery.data?.items ?? [], [ordersQuery.data?.items]);
   const hasCategories = categories.length > 0;
 
   const lowStockProductIds = useMemo(() => {
@@ -433,11 +434,9 @@ export function CatalogPage() {
   );
 
   const handleAddToOrder = useCallback(
-    (product: Product, unitPrice: number | null, quantity = 1) => {
-      const orderId = addProductToDraftOrder({
+    async (product: Product, unitPrice: number | null, quantity = 1) => {
+      const order = await addProductToDraftOrderMutation.mutateAsync({
         productId: product.id,
-        productName: product.name,
-        unit: product.unit,
         quantity,
         unitPrice,
       });
@@ -445,12 +444,12 @@ export function CatalogPage() {
         action: {
           label: "Ouvrir",
           onClick: () => {
-            navigate(`/app/orders/${orderId}`);
+            navigate(`/app/orders/${order.id}`);
           },
         },
       });
     },
-    [addProductToDraftOrder, navigate],
+    [addProductToDraftOrderMutation, navigate],
   );
 
   const handleCreateOrUpdate = useCallback(

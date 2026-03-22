@@ -50,6 +50,7 @@ export function InvitePage() {
         jwtToken: auth.jwtToken,
         accountId: auth.accountId,
         companyId: auth.companyId,
+        companyName: auth.companyName,
         role: auth.role,
         displayName: auth.displayName,
       });

@@ -2,6 +2,8 @@ export type AuthResponse = {
   jwtToken: string;
   accountId: string;
   companyId: string;
+  companyName: string;
+  expiresInMinutes: number;
   role: string;
   displayName: string;
 };

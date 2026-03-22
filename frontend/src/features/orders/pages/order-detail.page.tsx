@@ -1,14 +1,24 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Minus, PackageCheck, Plus, Save, Send, ShoppingCart, Trash2, Truck, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCreateLot } from "@/features/lots/api/lots.queries";
+import {
+  useAddOrderLine,
+  useCancelOrder,
+  useDeleteOrder,
+  useOrderDetail,
+  useRecordOrderReception,
+  useRemoveOrderLine,
+  useSendOrder,
+  useUpdateOrder,
+  useUpdateOrderLine,
+} from "@/features/orders/api/orders.queries";
 import { useProductsAll } from "@/features/products/api/products.queries";
 import { useCreateReception } from "@/features/receptions/api/receptions.queries";
 import { useSuppliersAll } from "@/features/suppliers/api/suppliers.queries";
-import { useOrdersStore } from "@/features/orders/orders.store";
 import type { OrderLine } from "@/features/orders/orders.types";
 import { formatOrderCurrency, getOrderEstimatedTotal, getOrderStatusLabel, getOrderStatusTone } from "@/features/orders/orders.utils";
 import type { ApiError } from "@/shared/api/apiClient";
@@ -44,16 +54,15 @@ export function OrderDetailPage() {
   const navigate = useNavigate();
   const orderId = params.orderId ?? "";
 
-  const orders = useOrdersStore((state) => state.orders);
-  const updateOrderMeta = useOrdersStore((state) => state.updateOrderMeta);
-  const updateOrderLine = useOrdersStore((state) => state.updateOrderLine);
-  const addLineToOrder = useOrdersStore((state) => state.addLineToOrder);
-  const removeOrderLine = useOrdersStore((state) => state.removeOrderLine);
-  const deleteOrder = useOrdersStore((state) => state.deleteOrder);
-  const markOrderAsSent = useOrdersStore((state) => state.markOrderAsSent);
-  const cancelOrder = useOrdersStore((state) => state.cancelOrder);
-  const recordOrderReception = useOrdersStore((state) => state.recordOrderReception);
-
+  const orderQuery = useOrderDetail(orderId);
+  const updateOrderMutation = useUpdateOrder();
+  const updateOrderLineMutation = useUpdateOrderLine();
+  const addOrderLineMutation = useAddOrderLine();
+  const removeOrderLineMutation = useRemoveOrderLine();
+  const deleteOrderMutation = useDeleteOrder();
+  const sendOrderMutation = useSendOrder();
+  const cancelOrderMutation = useCancelOrder();
+  const recordOrderReceptionMutation = useRecordOrderReception();
   const productsQuery = useProductsAll();
   const suppliersQuery = useSuppliersAll();
   const createReceptionMutation = useCreateReception();
@@ -64,12 +73,29 @@ export function OrderDetailPage() {
   const [deliveryDate, setDeliveryDate] = useState(new Date().toISOString().slice(0, 10));
   const [deliveryNote, setDeliveryNote] = useState("");
   const [receiveByLineId, setReceiveByLineId] = useState<Record<string, ReceiveLineState>>({});
+  const [orderMeta, setOrderMeta] = useState({
+    supplierId: "",
+    orderDate: new Date().toISOString().slice(0, 10),
+    notes: "",
+  });
 
-  const order = useMemo(() => orders.find((item) => item.id === orderId) ?? null, [orderId, orders]);
+  const order = orderQuery.data ?? null;
   const products = useMemo(() => productsQuery.data?.items ?? [], [productsQuery.data?.items]);
   const suppliers = suppliersQuery.data?.items ?? [];
 
   const availableProducts = useMemo(() => products.filter((product) => !order?.lines.some((line) => line.productId === product.id)), [order?.lines, products]);
+
+  useEffect(() => {
+    if (!order) {
+      return;
+    }
+
+    setOrderMeta({
+      supplierId: order.supplierId ?? "",
+      orderDate: order.orderDate,
+      notes: order.notes ?? "",
+    });
+  }, [order]);
 
   const orderTotals = useMemo(() => {
     if (!order) {
@@ -97,6 +123,38 @@ export function OrderDetailPage() {
         ...patch,
       },
     }));
+  }
+
+  async function persistOrderLine(lineId: string, patch: { quantityOrdered?: number; unitPrice?: number | null }) {
+    if (!order) {
+      return;
+    }
+
+    const line = order.lines.find((item) => item.id === lineId);
+    if (!line) {
+      return;
+    }
+
+    try {
+      await updateOrderLineMutation.mutateAsync({
+        orderId: order.id,
+        lineId,
+        quantityOrdered: patch.quantityOrdered ?? line.quantityOrdered,
+        unitPrice: patch.unitPrice === undefined ? line.unitPrice : patch.unitPrice,
+      });
+    } catch (error) {
+      toast.error(getApiErrorMessage(error as ApiError, "Impossible de mettre à jour la ligne de commande."));
+    }
+  }
+
+  if (orderQuery.isLoading) {
+    return (
+      <section className="page-shell">
+        <SectionCard title="Chargement de la commande" description="Les informations de commande sont en cours de chargement.">
+          <p className="text-sm text-muted-foreground">Veuillez patienter quelques instants.</p>
+        </SectionCard>
+      </section>
+    );
   }
 
   if (!order) {
@@ -134,18 +192,36 @@ export function OrderDetailPage() {
           ? "Commande envoyée. Vérifiez les livraisons reçues depuis la section dédiée."
           : "Brouillon modifiable avant envoi.";
 
-  function handleSaveOrder() {
+  async function handleSaveOrder() {
+    try {
+      await updateOrderMutation.mutateAsync({
+        id: currentOrder.id,
+        supplierId: orderMeta.supplierId || undefined,
+        orderDate: orderMeta.orderDate,
+        notes: orderMeta.notes,
+      });
       toast.success("Commande enregistrée.");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error as ApiError, "Impossible d'enregistrer la commande."));
+    }
   }
 
-  function handleMarkAsSent() {
-    markOrderAsSent(currentOrder.id);
-    toast.success("Commande marquée comme envoyée.");
+  async function handleMarkAsSent() {
+    try {
+      await sendOrderMutation.mutateAsync(currentOrder.id);
+      toast.success("Commande marquée comme envoyée.");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error as ApiError, "Impossible d'envoyer la commande."));
+    }
   }
 
-  function handleCancelOrder() {
-    cancelOrder(currentOrder.id);
-    toast.success("Commande annulée.");
+  async function handleCancelOrder() {
+    try {
+      await cancelOrderMutation.mutateAsync(currentOrder.id);
+      toast.success("Commande annulée.");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error as ApiError, "Impossible d'annuler la commande."));
+    }
   }
 
   async function handleReceiveOrder() {
@@ -199,9 +275,13 @@ export function OrderDetailPage() {
         });
       }
 
-      recordOrderReception(currentOrder.id, {
+      await recordOrderReceptionMutation.mutateAsync({
+        orderId: currentOrder.id,
         receptionId: createdReception.id,
-        receivedByProductId: Object.fromEntries(linesToReceive.map((item) => [item.line.productId, item.quantity])),
+        lines: linesToReceive.map((item) => ({
+          productId: item.line.productId,
+          quantityReceived: item.quantity,
+        })),
       });
 
       setReceiveByLineId({});
@@ -244,154 +324,138 @@ export function OrderDetailPage() {
         }
       />
 
-      <SectionCard
-        title="État de la commande"
-        description={statusMessage}
-        actions={
-          <div className={`inline-flex rounded-full border px-3 py-1.5 text-sm font-medium ${getOrderStatusTone(order.status)}`}>
-            {getOrderStatusLabel(order.status)}
-          </div>
-        }
-      >
-        <div className="grid gap-3 md:grid-cols-3">
-          <div className="rounded-[20px] border border-border/70 bg-muted/30 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Commande</p>
-            <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-foreground">{orderTotals.ordered}</p>
-          </div>
-          <div className="rounded-[20px] border border-emerald-200 bg-emerald-50 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-emerald-700">Déjà reçu</p>
-            <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-emerald-900">{orderTotals.received}</p>
-          </div>
-          <div className="rounded-[20px] border border-amber-200 bg-amber-50 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-amber-700">Reste à recevoir</p>
-            <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-amber-900">{orderTotals.remaining}</p>
-          </div>
-        </div>
-      </SectionCard>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_380px] xl:items-start">
+        <div className="space-y-4">
+          <SectionCard title="Informations de commande" description="Renseignez le fournisseur, la date et les informations utiles pour cette commande.">
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="space-y-2">
+                <span className="block text-sm font-medium text-foreground">Fournisseur</span>
+                <select
+                  className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                  value={orderMeta.supplierId}
+                  disabled={!canEditOrder}
+                  onChange={(event) => setOrderMeta((current) => ({ ...current, supplierId: event.target.value }))}
+                >
+                  <option value="">À attribuer</option>
+                  {suppliers.map((supplier) => (
+                    <option key={supplier.id} value={supplier.id}>
+                      {supplier.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-      <SectionCard
-        title="Livraisons liées"
-        description={
-          order.receptionIds.length > 0
-            ? `${order.receptionIds.length} livraison(s) déjà enregistrée(s) pour cette commande.`
-            : canReceive
-              ? "Aucune livraison enregistrée pour le moment. Utilisez la section de réception pour enregistrer ce qui arrive réellement."
-              : "Aucune livraison enregistrée pour le moment."
-        }
-      >
-        {order.receptionIds.length > 0 ? (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {order.receptionIds.map((receptionId, index) => (
-              <div key={receptionId} className="rounded-[20px] border border-border/70 bg-background/80 p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Livraison {index + 1}</p>
-                <p className="mt-2 text-sm font-medium text-foreground">{receptionId}</p>
-                <Button asChild size="sm" variant="outline" className="mt-3">
-                  <Link to={`/app/receptions/${receptionId}`}>Ouvrir la livraison</Link>
-                </Button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-            {canReceive
-              ? "La commande a été envoyée, mais aucune livraison n'a encore été enregistrée."
-              : "Aucune livraison associée à cette commande."}
-          </p>
-        )}
-      </SectionCard>
+              <label className="space-y-2">
+                <span className="block text-sm font-medium text-foreground">Date</span>
+                <Input
+                  value={orderMeta.orderDate}
+                  type="date"
+                  disabled={!canEditOrder}
+                  onChange={(event) => setOrderMeta((current) => ({ ...current, orderDate: event.target.value }))}
+                />
+              </label>
+            </div>
 
-      <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <SectionCard title="Informations de commande" description="Renseignez le fournisseur, la date et les informations utiles pour cette commande.">
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="space-y-2">
-              <span className="block text-sm font-medium text-foreground">Fournisseur</span>
-              <select
-                className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
-                value={order.supplierId ?? ""}
+            <label className="mt-4 block space-y-2">
+              <span className="block text-sm font-medium text-foreground">Note</span>
+              <textarea
+                className="min-h-28 w-full rounded-xl border border-input bg-background px-3 py-3 text-sm"
+                value={orderMeta.notes}
                 disabled={!canEditOrder}
-                onChange={(event) => updateOrderMeta(order.id, { supplierId: event.target.value || undefined })}
-              >
-                <option value="">À attribuer</option>
-                {suppliers.map((supplier) => (
-                  <option key={supplier.id} value={supplier.id}>
-                    {supplier.name}
-                  </option>
+                onChange={(event) => setOrderMeta((current) => ({ ...current, notes: event.target.value }))}
+                placeholder="Ex. livraison du jeudi, produit sensible, quantité à confirmer..."
+              />
+            </label>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {canEditOrder ? (
+                <Button onClick={() => void handleSaveOrder()}>
+                  <Save className="h-4 w-4" />
+                  Enregistrer
+                </Button>
+              ) : null}
+              {canMarkAsSent ? (
+                <Button variant="outline" onClick={() => void handleMarkAsSent()}>
+                  <Send className="h-4 w-4" />
+                  Marquer comme envoyée
+                </Button>
+              ) : null}
+              {canCancel ? (
+                <Button variant="outline" className="text-destructive hover:text-destructive" onClick={() => void handleCancelOrder()}>
+                  <XCircle className="h-4 w-4" />
+                  Annuler la commande
+                </Button>
+              ) : null}
+              {canDelete ? (
+                <Button
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive"
+                  onClick={async () => {
+                    await deleteOrderMutation.mutateAsync(order.id);
+                    navigate("/app/orders");
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Supprimer la commande
+                </Button>
+              ) : null}
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            title="Livraisons liées"
+            description={
+              order.receptionIds.length > 0
+                ? `${order.receptionIds.length} livraison(s) déjà enregistrée(s) pour cette commande.`
+                : canReceive
+                  ? "Aucune livraison enregistrée pour le moment. Utilisez la section de réception pour enregistrer ce qui arrive réellement."
+                  : "Aucune livraison enregistrée pour le moment."
+            }
+          >
+            {order.receptionIds.length > 0 ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                {order.receptionIds.map((receptionId, index) => (
+                  <div key={receptionId} className="rounded-[20px] border border-border/70 bg-background/80 p-4">
+                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Livraison {index + 1}</p>
+                    <p className="mt-2 text-sm font-medium text-foreground">{receptionId}</p>
+                    <Button asChild size="sm" variant="outline" className="mt-3">
+                      <Link to={`/app/receptions/${receptionId}`}>Ouvrir la livraison</Link>
+                    </Button>
+                  </div>
                 ))}
-              </select>
-            </label>
-
-            <label className="space-y-2">
-              <span className="block text-sm font-medium text-foreground">Date</span>
-              <Input value={order.orderDate} type="date" disabled={!canEditOrder} onChange={(event) => updateOrderMeta(order.id, { orderDate: event.target.value })} />
-            </label>
-          </div>
-
-          <label className="mt-4 block space-y-2">
-            <span className="block text-sm font-medium text-foreground">Note</span>
-            <textarea
-              className="min-h-28 w-full rounded-xl border border-input bg-background px-3 py-3 text-sm"
-              value={order.notes ?? ""}
-              disabled={!canEditOrder}
-              onChange={(event) => updateOrderMeta(order.id, { notes: event.target.value })}
-              placeholder="Ex. livraison du jeudi, produit sensible, quantité à confirmer..."
-            />
-          </label>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            {canEditOrder ? (
-              <Button onClick={handleSaveOrder}>
-                <Save className="h-4 w-4" />
-                Enregistrer
-              </Button>
-            ) : null}
-            {canMarkAsSent ? (
-              <Button variant="outline" onClick={handleMarkAsSent}>
-                <Send className="h-4 w-4" />
-                Marquer comme envoyée
-              </Button>
-            ) : null}
-            {canCancel ? (
-              <Button variant="outline" className="text-destructive hover:text-destructive" onClick={handleCancelOrder}>
-                <XCircle className="h-4 w-4" />
-                Annuler la commande
-              </Button>
-            ) : null}
-            {canDelete ? (
-              <Button
-                variant="ghost"
-                className="text-destructive hover:text-destructive"
-                onClick={() => {
-                  deleteOrder(order.id);
-                  navigate("/app/orders");
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-                Supprimer la commande
-              </Button>
-            ) : null}
-          </div>
-        </SectionCard>
+              </div>
+            ) : (
+              <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                {canReceive
+                  ? "La commande a été envoyée, mais aucune livraison n'a encore été enregistrée."
+                  : "Aucune livraison associée à cette commande."}
+              </p>
+            )}
+          </SectionCard>
+        </div>
 
         <SectionCard
-          title="Actions disponibles"
-          description={
-            canEditOrder
-              ? "Complétez le brouillon avant l'envoi."
-              : canReceive
-                ? "La structure de commande est verrouillée. Enregistrez seulement les livraisons restantes."
-                : "Cette commande est consultable, sans action de modification."
+          className="xl:sticky xl:top-24"
+          title="État de la commande"
+          description={statusMessage}
+          actions={
+            <div className={`inline-flex rounded-full border px-3 py-1.5 text-sm font-medium ${getOrderStatusTone(order.status)}`}>
+              {getOrderStatusLabel(order.status)}
+            </div>
           }
         >
-          <div className="grid gap-3">
+          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
             <div className="rounded-[20px] border border-border/70 bg-muted/30 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Ce que vous pouvez faire ici</p>
-              <p className="mt-2 text-sm text-foreground">
-                {canEditOrder
-                  ? "Modifier le fournisseur, la date, les notes, les produits et les quantités."
-                  : canReceive
-                    ? "Consulter la commande et enregistrer les livraisons restantes."
-                    : "Consulter l'historique, les produits commandés et les livraisons déjà liées."}
-              </p>
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Commande</p>
+              <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-foreground">{orderTotals.ordered}</p>
+            </div>
+            <div className="rounded-[20px] border border-emerald-200 bg-emerald-50 p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-emerald-700">Déjà reçu</p>
+              <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-emerald-900">{orderTotals.received}</p>
+            </div>
+            <div className="rounded-[20px] border border-amber-200 bg-amber-50 p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-amber-700">Reste à recevoir</p>
+              <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-amber-900">{orderTotals.remaining}</p>
             </div>
           </div>
         </SectionCard>
@@ -444,7 +508,7 @@ export function OrderDetailPage() {
                           size="icon"
                           variant="outline"
                           disabled={!canEditOrder}
-                          onClick={() => updateOrderLine(order.id, line.id, { quantityOrdered: Math.max(line.quantityOrdered - 1, 1) })}
+                          onClick={() => void persistOrderLine(line.id, { quantityOrdered: Math.max(line.quantityOrdered - 1, 1) })}
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
@@ -453,9 +517,9 @@ export function OrderDetailPage() {
                           min={1}
                           value={line.quantityOrdered}
                           disabled={!canEditOrder}
-                          onChange={(event) => updateOrderLine(order.id, line.id, { quantityOrdered: Number(event.target.value) || 1 })}
+                          onChange={(event) => void persistOrderLine(line.id, { quantityOrdered: Number(event.target.value) || 1 })}
                         />
-                        <Button size="icon" variant="outline" disabled={!canEditOrder} onClick={() => updateOrderLine(order.id, line.id, { quantityOrdered: line.quantityOrdered + 1 })}>
+                        <Button size="icon" variant="outline" disabled={!canEditOrder} onClick={() => void persistOrderLine(line.id, { quantityOrdered: line.quantityOrdered + 1 })}>
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
@@ -463,17 +527,17 @@ export function OrderDetailPage() {
 
                     <label className="space-y-2">
                       <span className="block text-sm font-medium text-foreground">Prix unitaire</span>
-                      <Input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        value={line.unitPrice ?? ""}
-                        disabled={!canEditOrder}
-                        onChange={(event) =>
-                          updateOrderLine(order.id, line.id, {
-                            unitPrice: event.target.value === "" ? null : Number(event.target.value),
-                          })
-                        }
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={line.unitPrice ?? ""}
+                          disabled={!canEditOrder}
+                          onChange={(event) =>
+                            void persistOrderLine(line.id, {
+                              unitPrice: event.target.value === "" ? null : Number(event.target.value),
+                            })
+                          }
                         placeholder="Non renseigné"
                       />
                     </label>
@@ -501,7 +565,17 @@ export function OrderDetailPage() {
                     </div>
 
                     {canEditOrder ? (
-                      <Button variant="ghost" className="text-destructive hover:text-destructive" onClick={() => removeOrderLine(order.id, line.id)}>
+                      <Button
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive"
+                        onClick={async () => {
+                          try {
+                            await removeOrderLineMutation.mutateAsync({ orderId: order.id, lineId: line.id });
+                          } catch (error) {
+                            toast.error(getApiErrorMessage(error as ApiError, "Impossible de retirer la ligne."));
+                          }
+                        }}
+                      >
                         <XCircle className="h-4 w-4" />
                         Retirer
                       </Button>
@@ -531,18 +605,21 @@ export function OrderDetailPage() {
             </select>
             <Input value={newQuantity} type="number" min={1} disabled={!canEditOrder} onChange={(event) => setNewQuantity(event.target.value)} />
             <Button
-              onClick={() => {
+              onClick={async () => {
                 const selectedProduct = products.find((product) => product.id === newProductId);
                 if (!selectedProduct) return;
-                addLineToOrder(order.id, {
-                  productId: selectedProduct.id,
-                  productName: selectedProduct.name,
-                  unit: selectedProduct.unit,
-                  quantity: Number(newQuantity) || 1,
-                  unitPrice: null,
-                });
-                setNewProductId("");
-                setNewQuantity("1");
+                try {
+                  await addOrderLineMutation.mutateAsync({
+                    orderId: order.id,
+                    productId: selectedProduct.id,
+                    quantity: Number(newQuantity) || 1,
+                    unitPrice: null,
+                  });
+                  setNewProductId("");
+                  setNewQuantity("1");
+                } catch (error) {
+                  toast.error(getApiErrorMessage(error as ApiError, "Impossible d'ajouter le produit à la commande."));
+                }
               }}
               disabled={!canEditOrder || !newProductId}
             >

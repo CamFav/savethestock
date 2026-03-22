@@ -19,7 +19,7 @@ import { useInventoriesList } from "@/features/inventories/api/inventories.queri
 import { useLotsList } from "@/features/lots/api/lots.queries";
 import { LotsTable } from "@/features/lots/components/LotsTable";
 import { getLotExpiryVariant, getLotRemainingQuantity, getProductStockFromLots } from "@/features/lots/lots-stock.utils";
-import { useOrdersStore } from "@/features/orders/orders.store";
+import { useAddProductToDraftOrder, useOrdersAll } from "@/features/orders/api/orders.queries";
 import { useProductsAll } from "@/features/products/api/products.queries";
 import { useReceptionsList } from "@/features/receptions/api/receptions.queries";
 import { useSuppliersAll } from "@/features/suppliers/api/suppliers.queries";
@@ -89,8 +89,8 @@ export function ProductDetailPage() {
   const params = useParams<{ productId: string }>();
   const productId = params.productId ?? "";
   const navigate = useNavigate();
-  const orders = useOrdersStore((state) => state.orders);
-  const addProductToDraftOrder = useOrdersStore((state) => state.addProductToDraftOrder);
+  const ordersQuery = useOrdersAll();
+  const addProductToDraftOrderMutation = useAddProductToDraftOrder();
   const [wasteLot, setWasteLot] = useState<LotListItem | null>(null);
   const [wasteQuantity, setWasteQuantity] = useState("0");
   const [wasteReason, setWasteReason] = useState("Expiration");
@@ -105,6 +105,7 @@ export function ProductDetailPage() {
   const createWasteSessionMutation = useCreateWasteSession();
   const addWasteLineMutation = useAddWasteLine();
   const postWasteSessionMutation = usePostWasteSession();
+  const orders = useMemo(() => ordersQuery.data?.items ?? [], [ordersQuery.data?.items]);
 
   const product = useMemo(() => {
     return (productsQuery.data?.items ?? []).find((item) => item.id === productId) ?? null;
@@ -235,15 +236,13 @@ export function ProductDetailPage() {
     );
   }, [lots]);
 
-  const handleRecommend = useCallback(() => {
+  const handleRecommend = useCallback(async () => {
     if (!product) {
       return;
     }
 
-    const orderId = addProductToDraftOrder({
+    const order = await addProductToDraftOrderMutation.mutateAsync({
       productId: product.id,
-      productName: product.name,
-      unit: product.unit,
       quantity: 1,
       unitPrice: stockSummary.latestUnitPrice,
     });
@@ -251,11 +250,11 @@ export function ProductDetailPage() {
       action: {
         label: "Ouvrir",
         onClick: () => {
-          navigate(`/app/orders/${orderId}`);
+          navigate(`/app/orders/${order.id}`);
         },
       },
     });
-  }, [addProductToDraftOrder, navigate, product, stockSummary.latestUnitPrice]);
+  }, [addProductToDraftOrderMutation, navigate, product, stockSummary.latestUnitPrice]);
 
   const handleOpenWasteDialog = useCallback((lot: LotListItem) => {
     setWasteLot(lot);

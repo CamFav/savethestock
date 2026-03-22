@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ArrowUpRight, Boxes, ShieldAlert, TrendingDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -7,13 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCategoriesList } from "@/features/categories/api/categories.queries";
-import {
-  useDashboardAlerts,
-  useDashboardSummary,
-  useDashboardTopWasteProducts,
-} from "@/features/dashboard/api/dashboard.queries";
+import { useDashboardSummary, useDashboardTopWasteProducts } from "@/features/dashboard/api/dashboard.queries";
 import { buildAnalysisInsights } from "@/features/dashboard/dashboard-finance.utils";
-import { useInventoriesList } from "@/features/inventories/api/inventories.queries";
 import { useLotsList } from "@/features/lots/api/lots.queries";
 import { useProductsAll } from "@/features/products/api/products.queries";
 import { useReceptionsList } from "@/features/receptions/api/receptions.queries";
@@ -21,7 +15,6 @@ import { useSuppliersAll } from "@/features/suppliers/api/suppliers.queries";
 import { useWasteSessionsList } from "@/features/waste-sessions/api/wasteSessions.queries";
 import { ModuleHeroHeader } from "@/shared/ui/module-hero-header";
 import type { ApiError } from "@/shared/api/apiClient";
-import { MetricValue } from "@/shared/ui/metric-value";
 
 type PeriodPreset = "7d" | "14d" | "thisMonth" | "lastMonth" | "custom";
 
@@ -70,55 +63,6 @@ function formatCurrency(value: number): string {
 function formatQuantity(value: number): string {
   const safe = Number.isFinite(value) ? value : 0;
   return new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 3 }).format(safe);
-}
-
-function KpiCard({
-  title,
-  value,
-  description,
-  to,
-  placeholder = false,
-}: {
-  title: string;
-  value: string;
-  description: string;
-  to?: string;
-  placeholder?: boolean;
-}) {
-  return (
-    <Card className="border-border/70 bg-background/75">
-      <CardHeader className="pb-2">
-        <CardDescription className="text-xs uppercase tracking-[0.16em]">{title}</CardDescription>
-        <MetricValue placeholder={placeholder}>{value}</MetricValue>
-      </CardHeader>
-      <CardContent className="flex items-center justify-between gap-3 pt-0">
-        <p className="text-xs text-muted-foreground">{description}</p>
-        {to ? (
-          <Button asChild size="sm" variant="ghost">
-            <Link to={to}>
-              Voir
-              <ArrowUpRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        ) : null}
-      </CardContent>
-    </Card>
-  );
-}
-
-function KpiSkeletonCard() {
-  return (
-    <Card className="border-border/70">
-      <CardHeader className="space-y-2 pb-2">
-        <Skeleton className="h-3 w-32" />
-        <Skeleton className="h-7 w-40" />
-      </CardHeader>
-      <CardContent className="space-y-2 pt-0">
-        <Skeleton className="h-3 w-full" />
-        <Skeleton className="h-3 w-24" />
-      </CardContent>
-    </Card>
-  );
 }
 
 function SectionHeader({ title, description }: { title: string; description: string }) {
@@ -252,71 +196,17 @@ function ProductValueCard({
   );
 }
 
-function AlertListCard({
-  icon,
-  title,
-  description,
-  accentClass,
-  rows,
-  emptyMessage,
-}: {
-  icon: ReactNode;
-  title: string;
-  description: string;
-  accentClass: string;
-  rows: Array<{ id: string; label: string; help: string; to?: string }>;
-  emptyMessage: string;
-}) {
-  return (
-    <Card className="border-border/70">
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <div className={`flex h-9 w-9 items-center justify-center rounded-full ${accentClass}`}>{icon}</div>
-          <div className="space-y-0.5">
-            <CardTitle className="text-base">{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {rows.length === 0 ? (
-          <EmptyCardMessage>{emptyMessage}</EmptyCardMessage>
-        ) : (
-          <div className="space-y-2">
-            {rows.slice(0, 5).map((row) =>
-              row.to ? (
-                <Link key={row.id} to={row.to} className="block rounded-xl border p-3 transition-colors hover:bg-muted/40">
-                  <p className="text-sm font-medium">{row.label}</p>
-                  <p className="text-xs text-muted-foreground">{row.help}</p>
-                </Link>
-              ) : (
-                <div key={row.id} className="rounded-xl border p-3">
-                  <p className="text-sm font-medium">{row.label}</p>
-                  <p className="text-xs text-muted-foreground">{row.help}</p>
-                </div>
-              ),
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
 export function AnalysesPage() {
   const initialRange = useMemo(() => getPresetRange("14d"), []);
   const [periodPreset, setPeriodPreset] = useState<PeriodPreset>("14d");
   const [from, setFrom] = useState(initialRange.from);
   const [to, setTo] = useState(initialRange.to);
-  const [expiryDays, setExpiryDays] = useState(7);
 
   const summaryParams = useMemo(() => ({ from: from || undefined, to: to || undefined }), [from, to]);
   const topParams = useMemo(() => ({ from: from || undefined, to: to || undefined, limit: 5 }), [from, to]);
-  const alertsParams = useMemo(() => ({ expiryDays }), [expiryDays]);
 
   const summaryQuery = useDashboardSummary(summaryParams);
   const topQuery = useDashboardTopWasteProducts(topParams);
-  const alertsQuery = useDashboardAlerts(alertsParams);
 
   const lotsQuery = useLotsList({ page: 1, pageSize: 1000 });
   const productsQuery = useProductsAll();
@@ -324,13 +214,6 @@ export function AnalysesPage() {
   const receptionsQuery = useReceptionsList({ page: 1, pageSize: 500 });
   const suppliersQuery = useSuppliersAll();
   const wasteSessionsQuery = useWasteSessionsList({
-    page: 1,
-    pageSize: 100,
-    from: from || undefined,
-    to: to || undefined,
-    status: "POSTED",
-  });
-  const inventoriesQuery = useInventoriesList({
     page: 1,
     pageSize: 100,
     from: from || undefined,
@@ -354,7 +237,6 @@ export function AnalysesPage() {
 
   const summary = summaryQuery.data;
   const topWasteProducts = topQuery.data ?? [];
-  const alerts = alertsQuery.data;
   const wasteSessionsCount = wasteSessionsQuery.data?.total ?? 0;
   const topWasteProduct = topWasteProducts[0];
 
@@ -399,21 +281,6 @@ export function AnalysesPage() {
     },
   ];
 
-  const ownerAlerts = [
-    ...insights.topExpiredStockProducts.slice(0, 2).map((row) => ({
-      id: `expired-${row.productId}`,
-      label: row.productName,
-      help: `${formatCurrency(row.expiredValue)} bloqués en lots expirés`,
-      to: `/app/catalog/${row.productId}`,
-    })),
-    ...insights.underThresholdProducts.slice(0, 2).map((row) => ({
-      id: `threshold-${row.productId}`,
-      label: row.productName,
-      help: `${formatQuantity(row.availableQuantity)} ${row.unit} disponibles pour un seuil de ${formatQuantity(row.minimumStock)}`,
-      to: `/app/catalog/${row.productId}`,
-    })),
-  ];
-
   function applyPreset(nextPreset: Exclude<PeriodPreset, "custom">) {
     const range = getPresetRange(nextPreset);
     setPeriodPreset(nextPreset);
@@ -431,7 +298,7 @@ export function AnalysesPage() {
     setTo(value);
   }
 
-  const hasFatalError = summaryQuery.isError && topQuery.isError && alertsQuery.isError;
+  const hasFatalError = summaryQuery.isError && topQuery.isError;
   if (hasFatalError) {
     return (
       <section className="mx-auto w-full max-w-7xl space-y-6">
@@ -450,7 +317,6 @@ export function AnalysesPage() {
                 void Promise.all([
                   summaryQuery.refetch(),
                   topQuery.refetch(),
-                  alertsQuery.refetch(),
                   lotsQuery.refetch(),
                 ])
               }
@@ -486,7 +352,7 @@ export function AnalysesPage() {
       <Card className="border-border/70">
         <CardHeader>
           <CardTitle className="text-base">Période d’analyse</CardTitle>
-          <CardDescription>Choisissez la fenêtre de lecture et le seuil de surveillance des péremptions.</CardDescription>
+          <CardDescription>Choisissez la fenêtre de lecture à analyser.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-3 lg:grid-cols-12">
           <div className="flex flex-wrap gap-2 lg:col-span-7">
@@ -511,7 +377,7 @@ export function AnalysesPage() {
               Mois dernier
             </Button>
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:col-span-5">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:col-span-5">
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">Du</p>
               <Input type="date" value={from} onChange={(event) => onFromChange(event.target.value)} />
@@ -520,79 +386,16 @@ export function AnalysesPage() {
               <p className="text-xs text-muted-foreground">Au</p>
               <Input type="date" value={to} onChange={(event) => onToChange(event.target.value)} />
             </div>
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Alerte péremption</p>
-              <select
-                className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
-                value={expiryDays}
-                onChange={(event) => setExpiryDays(Number(event.target.value))}
-              >
-                <option value={3}>3 jours</option>
-                <option value={7}>7 jours</option>
-                <option value={14}>14 jours</option>
-              </select>
-            </div>
           </div>
         </CardContent>
       </Card>
 
       <div className="space-y-3">
         <SectionHeader
-          title="Vue d’ensemble financière"
-          description="Les montants clés à surveiller pour piloter les achats, le stock et les écarts."
-        />
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
-          {summaryQuery.isLoading ? (
-            <>
-              <KpiSkeletonCard />
-              <KpiSkeletonCard />
-              <KpiSkeletonCard />
-              <KpiSkeletonCard />
-              <KpiSkeletonCard />
-            </>
-          ) : (
-            <>
-              <KpiCard
-                title="Achats totaux"
-                value={formatCurrency(estimatedPurchasesValue)}
-                description="Réceptions valorisées sur la période."
-                to="/app/orders"
-              />
-              <KpiCard
-                title="Stock utilisable"
-                value={formatCurrency(summary?.stockUsableValue ?? 0)}
-                description="Valeur du stock encore exploitable."
-                to="/app/catalog"
-              />
-              <KpiCard
-                title="Stock expiré"
-                value={formatCurrency(summary?.stockExpiredValue ?? 0)}
-                description="Valeur encore présente dans des lots expirés."
-                to="/app/catalog"
-              />
-              <KpiCard
-                title="Pertes"
-                value={formatCurrency(summary?.wasteValue ?? 0)}
-                description={`${formatQuantity(summary?.wasteQty ?? 0)} unités perdues sur la période.`}
-                to={`/app/waste-sessions?from=${from}&to=${to}&status=POSTED`}
-              />
-              <KpiCard
-                title="Écarts d’inventaire"
-                value={formatCurrency(summary?.inventoryVarianceValue ?? 0)}
-                description="Valorisation fournie par les inventaires validés."
-                to="/app/inventories"
-              />
-            </>
-          )}
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        <SectionHeader
           title="Achats"
           description="Où part l’argent sur la période, par catégorie, fournisseur et produit."
         />
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           <BreakdownCard
             title="Achats par catégorie"
             description="Valeur estimée des lots reçus, regroupée par catégorie produit."
@@ -613,35 +416,15 @@ export function AnalysesPage() {
             }
             emptyMessage="Aucune réception avec fournisseur exploitable sur la période."
           />
-          <BreakdownCard
-            title="Produits les plus achetés"
-            description="Produits qui concentrent le plus de valeur d’achat sur la période."
-            rows={insights.topPurchasedProducts}
-            valueFormatter={formatCurrency}
-            detailFormatter={(row) =>
-              `${formatQuantity(row.quantity ?? 0)} unités reçues · ${row.count ?? 0} lots`
-            }
-            emptyMessage="Aucun achat valorisé disponible."
-          />
         </div>
       </div>
 
       <div className="space-y-3">
         <SectionHeader
           title="Stock"
-          description="Ce qui immobilise du cash aujourd’hui, ce qui est encore utilisable et ce qui commence à poser problème."
+          description="Où la valeur reste immobilisée aujourd’hui et quels produits pèsent le plus dans le stock exploitable."
         />
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-          <BreakdownCard
-            title="Valeur du stock par catégorie"
-            description="Répartition de la valeur actuellement immobilisée dans le stock utilisable."
-            rows={insights.stockByCategory}
-            valueFormatter={formatCurrency}
-            detailFormatter={(row) =>
-              `${formatQuantity(row.quantity ?? 0)} unités disponibles · ${row.count ?? 0} produits`
-            }
-            emptyMessage="Aucun stock valorisable disponible."
-          />
+        <div className="grid grid-cols-1 gap-4">
           <ProductValueCard
             title="Produits avec la plus forte valeur immobilisée"
             description="Les produits qui mobilisent le plus de valeur en stock utilisable."
@@ -649,15 +432,6 @@ export function AnalysesPage() {
             valueKey="availableValue"
             quantityKey="availableQuantity"
             emptyMessage="Aucun stock utilisable à valoriser."
-          />
-          <ProductValueCard
-            title="Stock expiré à traiter"
-            description="Produits qui conservent encore de la valeur dans des lots expirés."
-            rows={insights.topExpiredStockProducts}
-            valueKey="expiredValue"
-            quantityKey="expiredQuantity"
-            emptyMessage="Aucun stock expiré à signaler."
-            tone="danger"
           />
         </div>
       </div>
@@ -667,8 +441,8 @@ export function AnalysesPage() {
           title="Pertes"
           description="Ce que vous perdez réellement sur la période et sur quels produits cela se concentre."
         />
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
-          <Card className="border-border/70 xl:col-span-8">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+          <Card className="border-border/70">
             <CardHeader>
               <CardTitle className="text-base">Résumé des pertes</CardTitle>
               <CardDescription>Lecture synthétique des pertes validées sur la période sélectionnée.</CardDescription>
@@ -691,32 +465,19 @@ export function AnalysesPage() {
                   <p className="text-xs text-muted-foreground">Nombre de validations sur la période.</p>
                 </div>
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-xl border bg-background/80 p-4">
-                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Produit principal</p>
-                  <p className="mt-2 text-base font-semibold">{topWasteProduct?.productName ?? "Aucun produit dominant"}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {topWasteProduct
-                      ? `${formatCurrency(topWasteProduct.totalWasteValue)} · ${formatQuantity(topWasteProduct.totalWasteQty)} unités`
-                      : "Aucune perte marquante sur la période."}
-                  </p>
-                </div>
-                <div className="rounded-xl border bg-background/80 p-4">
-                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Lecture de la période</p>
-                  <p className="mt-2 text-base font-semibold">
-                    {wasteSessionsCount > 0 ? `${wasteSessionsCount} session${wasteSessionsCount > 1 ? "s" : ""} validée${wasteSessionsCount > 1 ? "s" : ""}` : "Aucune perte validée"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {wasteSessionsCount > 0
-                      ? "Utilisez le détail des produits les plus perdus pour identifier les postes à surveiller."
-                      : "La période sélectionnée ne montre pas encore de pertes validées."}
-                  </p>
-                </div>
+              <div className="rounded-xl border bg-background/80 p-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Produit principal</p>
+                <p className="mt-2 text-base font-semibold">{topWasteProduct?.productName ?? "Aucun produit dominant"}</p>
+                <p className="text-sm text-muted-foreground">
+                  {topWasteProduct
+                    ? `${formatCurrency(topWasteProduct.totalWasteValue)} · ${formatQuantity(topWasteProduct.totalWasteQty)} unités`
+                    : "Aucune perte marquante sur la période."}
+                </p>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-border/70 xl:col-span-4">
+          <Card className="border-border/70">
             <CardHeader>
               <CardTitle className="text-base">Produits les plus perdus</CardTitle>
               <CardDescription>Top pertes valorisées issu des sessions validées.</CardDescription>
@@ -754,80 +515,6 @@ export function AnalysesPage() {
         </div>
       </div>
 
-      <div className="space-y-3">
-        <SectionHeader
-          title="Inventaires et écarts"
-          description="Ce que les inventaires validés remontent aujourd’hui sur la fiabilité du stock."
-        />
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <KpiCard
-            title="Sessions validées"
-            value={String(inventoriesQuery.data?.total ?? 0)}
-            description="Inventaires validés sur la période choisie."
-            to={`/app/inventories?from=${from}&to=${to}&status=POSTED`}
-          />
-          <KpiCard
-            title="Écarts valorisés"
-            value={formatCurrency(summary?.inventoryVarianceValue ?? 0)}
-            description="Montant consolidé des écarts d’inventaire sur la période."
-            to="/app/inventories"
-          />
-          <Card className="border-border/70 bg-background/75">
-            <CardHeader className="pb-2">
-              <CardDescription className="text-xs uppercase tracking-[0.16em]">Fiabilité du stock</CardDescription>
-              <CardTitle className="text-lg">Suivi des écarts</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <p className="text-xs text-muted-foreground">
-                Les inventaires validés aident à repérer les écarts les plus coûteux et à fiabiliser le stock.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        <SectionHeader
-          title="Alertes owner"
-          description="Les signaux concrets qui méritent une action rapide : stock à risque, cash immobilisé et pertes à traiter."
-        />
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-          <AlertListCard
-            icon={<ShieldAlert className="h-4 w-4 text-red-700" />}
-            title="Stock expiré et lots à traiter"
-            description={`${formatCurrency(alerts?.expiredStockValue ?? 0)} encore présents dans ${alerts?.expiredLots.length ?? 0} lots expirés.`}
-            accentClass="bg-red-100 text-red-700"
-            rows={(alerts?.expiredLots ?? []).map((lot) => ({
-              id: lot.lotId,
-              label: lot.productName,
-              help: `${formatQuantity(lot.quantityRemaining)} encore présents${lot.lotCode ? ` · lot ${lot.lotCode}` : ""}`,
-              to: `/app/catalog/${lot.productId}`,
-            }))}
-            emptyMessage="Aucun lot expiré à signaler."
-          />
-          <AlertListCard
-            icon={<Boxes className="h-4 w-4 text-amber-700" />}
-            title="Produits sous seuil"
-            description={`${alerts?.lowStockProducts.length ?? 0} produits demandent une action de réapprovisionnement.`}
-            accentClass="bg-amber-100 text-amber-700"
-            rows={(alerts?.lowStockProducts ?? []).map((product) => ({
-              id: product.productId,
-              label: product.productName,
-              help: `${formatQuantity(product.quantityRemaining)} disponibles pour un seuil de ${formatQuantity(product.alertThreshold)}`,
-              to: `/app/catalog/${product.productId}`,
-            }))}
-            emptyMessage="Aucun produit sous seuil pour le moment."
-          />
-          <AlertListCard
-            icon={<TrendingDown className="h-4 w-4 text-slate-700" />}
-            title="Priorités de pilotage"
-            description="Mélange des produits sous tension et du stock expiré à forte valeur."
-            accentClass="bg-slate-100 text-slate-700"
-            rows={ownerAlerts}
-            emptyMessage="Aucune alerte prioritaire supplémentaire à remonter."
-          />
-        </div>
-      </div>
     </section>
   );
 }

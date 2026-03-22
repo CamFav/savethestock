@@ -28,6 +28,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { logout } from "@/features/auth/auth.api";
 import { useSessionStore } from "@/shared/auth/sessionStore";
 import { getAppNavItems } from "@/shared/navigation/app-nav";
 
@@ -44,18 +45,25 @@ function getInitials(value: string): string {
 
 export function AppLayout() {
   const navigate = useNavigate();
-  const { clearSession, displayName, role } = useSessionStore(
+  const { clearSession, companyName, displayName, role } = useSessionStore(
     useShallow((s) => ({
       clearSession: s.clearSession,
+      companyName: s.companyName,
       displayName: s.displayName,
       role: s.role,
     })),
   );
   const navItems = getAppNavItems(role);
 
-  function handleLogout() {
-    clearSession();
-    navigate("/login", { replace: true });
+  async function handleLogout() {
+    try {
+      await logout();
+    } catch {
+      // Keep logout resilient even if the server-side cookie logout is unavailable.
+    } finally {
+      clearSession();
+      navigate("/login", { replace: true });
+    }
   }
 
   return (
@@ -64,7 +72,9 @@ export function AppLayout() {
         <SidebarHeader className="border-b border-sidebar-border pb-5 pt-6">
           <div className="px-2">
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-sidebar-foreground/45">SaveTheStock</p>
-            <p className="mt-2 text-lg font-semibold tracking-tight text-sidebar-foreground">Approvisionnement & stock</p>
+            <p className="mt-2 text-lg font-semibold tracking-tight text-sidebar-foreground">
+              {companyName?.trim() || "Approvisionnement & stock"}
+            </p>
           </div>
         </SidebarHeader>
 
@@ -135,7 +145,7 @@ export function AppLayout() {
                   className="rounded-xl"
                   onSelect={(event) => {
                     event.preventDefault();
-                    handleLogout();
+                    void handleLogout();
                   }}
                 >
                   <LogOut className="h-4 w-4" />

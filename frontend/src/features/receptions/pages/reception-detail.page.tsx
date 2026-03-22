@@ -9,10 +9,10 @@ import { useDeleteLot, useCreateLot, useLotsByReception } from "@/features/lots/
 import { LotsSkeleton } from "@/features/lots/components/LotsSkeleton";
 import { LotsTable } from "@/features/lots/components/LotsTable";
 import type { LotListItem } from "@/features/lots/lots.types";
+import { useOrderDetail } from "@/features/orders/api/orders.queries";
 import { useProductsAll } from "@/features/products/api/products.queries";
 import { useReceptionDetail } from "@/features/receptions/api/receptions.queries";
 import { ReceptionMetaCard } from "@/features/receptions/components/reception-meta-card";
-import { useOrdersStore } from "@/features/orders/orders.store";
 import { getOrderStatusLabel } from "@/features/orders/orders.utils";
 import { useSuppliersAll } from "@/features/suppliers/api/suppliers.queries";
 import type { ApiError } from "@/shared/api/apiClient";
@@ -55,7 +55,6 @@ export function ReceptionDetailPage() {
   const lotsQuery = useLotsByReception(lotsParams);
   const suppliersQuery = useSuppliersAll();
   const productsQuery = useProductsAll();
-  const orders = useOrdersStore((state) => state.orders);
   const createLotMutation = useCreateLot();
   const deleteLotMutation = useDeleteLot();
 
@@ -85,7 +84,8 @@ export function ReceptionDetailPage() {
   }, [lotsQuery.data?.items, productNameById]);
 
   const detail = detailQuery.data;
-  const linkedOrder = useMemo(() => orders.find((order) => order.receptionIds.includes(receptionId)) ?? null, [orders, receptionId]);
+  const linkedOrderQuery = useOrderDetail(detail?.orderId ?? "");
+  const linkedOrder = linkedOrderQuery.data ?? null;
   const totalLots = lotsQuery.data?.total ?? 0;
   const canAddLot = products.length > 0 && !productsQuery.isLoading;
   const pendingDeleteId = deleteLotMutation.isPending ? deleteTarget?.id ?? null : null;

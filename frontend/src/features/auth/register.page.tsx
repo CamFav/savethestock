@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getRegisterErrorPresentation } from "@/features/auth/auth.error-messages";
 import { register } from "@/features/auth/auth.api";
 import type { ApiError } from "@/shared/api/apiClient";
 import { useSessionStore } from "@/shared/auth/sessionStore";
@@ -44,6 +45,7 @@ export function RegisterPage() {
         jwtToken: auth.jwtToken,
         accountId: auth.accountId,
         companyId: auth.companyId,
+        companyName: auth.companyName,
         role: auth.role,
         displayName: auth.displayName,
       });
@@ -51,7 +53,25 @@ export function RegisterPage() {
       navigate("/app", { replace: true });
     } catch (err) {
       const ae = err as ApiError;
-      toast.error(ae.message ?? `Erreur (${ae.status})`);
+      const presentation = getRegisterErrorPresentation(ae);
+
+      if (presentation.fieldErrors?.companyName) {
+        form.setError("companyName", { message: presentation.fieldErrors.companyName });
+      }
+
+      if (presentation.fieldErrors?.ownerDisplayName) {
+        form.setError("ownerDisplayName", { message: presentation.fieldErrors.ownerDisplayName });
+      }
+
+      if (presentation.fieldErrors?.ownerEmail) {
+        form.setError("ownerEmail", { message: presentation.fieldErrors.ownerEmail });
+      }
+
+      if (presentation.fieldErrors?.password) {
+        form.setError("password", { message: presentation.fieldErrors.password });
+      }
+
+      toast.error(presentation.formMessage ?? ae.message ?? `Erreur (${ae.status})`);
     }
   }
 
@@ -68,12 +88,34 @@ export function RegisterPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="companyName">Nom de société</Label>
-                <Input id="companyName" placeholder="Acme Logistics" {...form.register("companyName")} />
+                <Input
+                  id="companyName"
+                  placeholder="Acme Logistics"
+                  {...form.register("companyName", {
+                    validate: (value) => value.trim().length > 0 || "Le nom de société est requis.",
+                  })}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Utilisez le nom qui identifiera votre entreprise dans l'application.
+                </p>
+                {form.formState.errors.companyName ? (
+                  <p className="text-sm text-destructive">{form.formState.errors.companyName.message}</p>
+                ) : null}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="ownerDisplayName">Nom</Label>
-                <Input id="ownerDisplayName" placeholder="Jean Dupont" {...form.register("ownerDisplayName")} />
+                <Input
+                  id="ownerDisplayName"
+                  placeholder="Jean Dupont"
+                  {...form.register("ownerDisplayName", {
+                    validate: (value) => value.trim().length > 0 || "Le nom est requis.",
+                  })}
+                />
+                <p className="text-xs text-muted-foreground">Ce nom sera affiché dans votre espace.</p>
+                {form.formState.errors.ownerDisplayName ? (
+                  <p className="text-sm text-destructive">{form.formState.errors.ownerDisplayName.message}</p>
+                ) : null}
               </div>
 
               <div className="space-y-2">
@@ -83,8 +125,20 @@ export function RegisterPage() {
                   type="email"
                   autoComplete="email"
                   placeholder="vous@entreprise.com"
-                  {...form.register("ownerEmail")}
+                  {...form.register("ownerEmail", {
+                    validate: (value) => {
+                      const trimmed = value.trim();
+                      if (!trimmed) return "L'email est requis.";
+                      return /\S+@\S+\.\S+/.test(trimmed) || "Renseignez un email valide.";
+                    },
+                  })}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Utilisez une adresse email accessible: elle servira à vous connecter.
+                </p>
+                {form.formState.errors.ownerEmail ? (
+                  <p className="text-sm text-destructive">{form.formState.errors.ownerEmail.message}</p>
+                ) : null}
               </div>
 
               <div className="space-y-2">
@@ -94,8 +148,19 @@ export function RegisterPage() {
                   type="password"
                   autoComplete="new-password"
                   placeholder="••••••••"
-                  {...form.register("password")}
+                  {...form.register("password", {
+                    validate: (value) => {
+                      if (!value) return "Le mot de passe est requis.";
+                      return value.length >= 8 || "Le mot de passe doit contenir au moins 8 caractères.";
+                    },
+                  })}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Minimum 8 caractères. Choisissez un mot de passe unique et difficile à deviner.
+                </p>
+                {form.formState.errors.password ? (
+                  <p className="text-sm text-destructive">{form.formState.errors.password.message}</p>
+                ) : null}
               </div>
 
               <Button type="submit" className="w-full" disabled={isSubmitting}>

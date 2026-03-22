@@ -25,8 +25,48 @@ export type OrderRecord = {
 
 export type AddProductToOrderInput = {
   productId: string;
-  productName: string;
-  unit: string;
   quantity?: number;
   unitPrice?: number | null;
+};
+
+export type OrdersListParams = {
+  page: number;
+  pageSize: number;
+};
+
+export type OrdersListResponse = {
+  items: OrderRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+export type OrderUpdateRequest = {
+  id: string;
+  supplierId?: string;
+  orderDate: string;
+  notes?: string;
+};
+
+export type OrderLineUpdateRequest = {
+  orderId: string;
+  lineId: string;
+  quantityOrdered: number;
+  unitPrice?: number | null;
+};
+
+export type OrderLineAddRequest = {
+  orderId: string;
+  productId: string;
+  quantity?: number;
+  unitPrice?: number | null;
+};
+
+export type OrderReceptionRecordRequest = {
+  orderId: string;
+  receptionId: string;
+  lines: Array<{
+    productId: string;
+    quantityReceived: number;
+  }>;
 };

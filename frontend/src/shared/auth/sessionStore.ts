@@ -4,6 +4,7 @@ type Session = {
   jwtToken: string | null;
   accountId: string | null;
   companyId: string | null;
+  companyName: string | null;
   role: string | null;
   displayName: string | null;
 };
@@ -19,18 +20,19 @@ function loadSession(): Session {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      return { jwtToken: null, accountId: null, companyId: null, role: null, displayName: null };
+      return { jwtToken: null, accountId: null, companyId: null, companyName: null, role: null, displayName: null };
     }
     const parsed = JSON.parse(raw) as Session;
     return {
       jwtToken: parsed.jwtToken ?? null,
       accountId: parsed.accountId ?? null,
       companyId: parsed.companyId ?? null,
+      companyName: parsed.companyName ?? null,
       role: parsed.role ?? null,
       displayName: parsed.displayName ?? null,
     };
   } catch {
-    return { jwtToken: null, accountId: null, companyId: null, role: null, displayName: null };
+    return { jwtToken: null, accountId: null, companyId: null, companyName: null, role: null, displayName: null };
   }
 }
 
@@ -46,6 +48,7 @@ export const useSessionStore = create<SessionStore>((set) => ({
       jwtToken: s.jwtToken,
       accountId: s.accountId,
       companyId: s.companyId,
+      companyName: s.companyName,
       role: s.role,
       displayName: s.displayName,
     };
@@ -54,7 +57,7 @@ export const useSessionStore = create<SessionStore>((set) => ({
   },
 
   clearSession: () => {
-    const empty: Session = { jwtToken: null, accountId: null, companyId: null, role: null, displayName: null };
+    const empty: Session = { jwtToken: null, accountId: null, companyId: null, companyName: null, role: null, displayName: null };
     set(empty);
     localStorage.removeItem(STORAGE_KEY);
   },
