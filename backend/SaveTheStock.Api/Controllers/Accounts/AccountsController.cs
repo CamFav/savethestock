@@ -28,6 +28,7 @@ public sealed class AccountsController : ControllerBase
 {
     private readonly AppDbContext _dbContext;
     private readonly IPasswordHasher<Account> _passwordHasher;
+    private readonly ILogger<AccountsController> _logger;
 
     private readonly ICurrentUser _currentUser;
 
@@ -40,6 +41,7 @@ public sealed class AccountsController : ControllerBase
         AppDbContext dbContext,
         IPasswordHasher<Account> passwordHasher,
         ICurrentUser currentUser,
+        ILogger<AccountsController> logger,
         InviteAccountUseCase inviteAccount,
         ChangeMyPasswordUseCase changeMyPassword,
         DeleteMyAccountUseCase deleteMyAccount,
@@ -48,6 +50,7 @@ public sealed class AccountsController : ControllerBase
         _dbContext = dbContext;
         _passwordHasher = passwordHasher;
         _currentUser = currentUser;
+        _logger = logger;
         _inviteAccount = inviteAccount;
         _changeMyPassword = changeMyPassword;
         _deleteMyAccount = deleteMyAccount;
@@ -319,6 +322,11 @@ public sealed class AccountsController : ControllerBase
                     request.NewPassword,
                     request.ConfirmNewPassword),
                 cancellationToken);
+
+            _logger.LogInformation(
+                "Security audit: password changed for account {AccountId} in company {CompanyId}.",
+                _currentUser.AccountId,
+                _currentUser.CompanyId);
 
             return NoContent();
         }

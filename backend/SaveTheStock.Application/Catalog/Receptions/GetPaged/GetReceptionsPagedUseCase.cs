@@ -32,6 +32,7 @@ public sealed class GetReceptionsPagedUseCase
             r.Status,
             r.AccountId,
             r.SupplierId,
+            r.OrderId,
             r.CreatedAt)).ToList();
 
         return new GetReceptionsPagedResult(mapped, page, pageSize, total);

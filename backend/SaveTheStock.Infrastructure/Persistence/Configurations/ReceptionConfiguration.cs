@@ -26,6 +26,7 @@ public sealed class ReceptionConfiguration : IEntityTypeConfiguration<Reception>
 
         builder.Property(x => x.AccountId).IsRequired();
         builder.Property(x => x.SupplierId);
+        builder.Property(x => x.OrderId);
 
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.DeletedAt);
@@ -34,12 +35,18 @@ public sealed class ReceptionConfiguration : IEntityTypeConfiguration<Reception>
 
         builder.HasIndex(x => x.CompanyId);
         builder.HasIndex(x => new { x.CompanyId, x.ReceptionDate });
+        builder.HasIndex(x => new { x.CompanyId, x.OrderId });
 
         builder.HasOne(x => x.Account)
             .WithMany()
             .HasForeignKey(x => x.AccountId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        
+        builder.HasOne(x => x.Order)
+            .WithMany(x => x.Receptions)
+            .HasForeignKey(x => new { x.CompanyId, x.OrderId })
+            .HasPrincipalKey(x => new { x.CompanyId, x.Id })
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

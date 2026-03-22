@@ -27,6 +27,8 @@ public sealed class UpdateSupplierUseCase
             throw new InvalidOperationException("not_found");
 
         var normalizedName = NameNormalizer.Normalize(input.Name);
+        var normalizedEmail = NormalizeEmail(input.Email);
+        var normalizedPhone = NormalizePhone(input.Phone);
 
         var exists = await _db.SupplierNameExistsAsync(
             companyId,
@@ -38,7 +40,25 @@ public sealed class UpdateSupplierUseCase
             throw new InvalidOperationException("duplicate_name");
 
         supplier.Name = normalizedName;
+        supplier.Email = normalizedEmail;
+        supplier.Phone = normalizedPhone;
 
         await _db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static string? NormalizeEmail(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return null;
+        }
+
+        return EmailNormalizer.Normalize(email);
+    }
+
+    private static string? NormalizePhone(string? phone)
+    {
+        var normalized = phone?.Trim();
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
     }
 }

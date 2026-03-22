@@ -23,6 +23,8 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderLine> OrderLines => Set<OrderLine>();
     public DbSet<Reception> Receptions => Set<Reception>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
     public DbSet<Lot> Lots => Set<Lot>();
@@ -52,6 +54,26 @@ public class AppDbContext : DbContext, IAppDbContext
         Invitations.Add(invitation);
     }
 
+    public void AddOrder(Order order)
+    {
+        Orders.Add(order);
+    }
+
+    public void AddOrderLine(OrderLine orderLine)
+    {
+        OrderLines.Add(orderLine);
+    }
+
+    public void RemoveOrder(Order order)
+    {
+        Orders.Remove(order);
+    }
+
+    public void RemoveOrderLine(OrderLine orderLine)
+    {
+        OrderLines.Remove(orderLine);
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
@@ -68,6 +90,7 @@ public class AppDbContext : DbContext, IAppDbContext
     {
         return Accounts
             .AsNoTracking()
+            .Include(a => a.Company)
             .FirstOrDefaultAsync(a =>
                 a.IsActive &&
                 a.DeletedAt == null &&
@@ -98,6 +121,15 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public async Task<bool> AccountHasBusinessHistoryAsync(Guid companyId, Guid accountId, CancellationToken cancellationToken)
     {
+        var hasOrder = await Orders
+            .AsNoTracking()
+            .AnyAsync(o => o.CompanyId == companyId && o.AccountId == accountId, cancellationToken);
+
+        if (hasOrder)
+        {
+            return true;
+        }
+
         var hasReception = await Receptions
             .IgnoreQueryFilters()
             .AsNoTracking()
@@ -126,6 +158,74 @@ public class AppDbContext : DbContext, IAppDbContext
                 ws.CompanyId == companyId &&
                 (ws.AccountId == accountId || ws.PostedByAccountId == accountId),
                 cancellationToken);
+    }
+
+    public Task<Order?> FindDraftOrderByCompanyIdAsync(Guid companyId, CancellationToken cancellationToken)
+    {
+        return Orders
+            .Include(o => o.Lines)
+            .Include(o => o.Receptions)
+            .FirstOrDefaultAsync(
+                o => o.CompanyId == companyId && o.Status == "DRAFT",
+                cancellationToken);
+    }
+
+    public Task<Order?> FindOrderByIdAndCompanyIdAsync(Guid orderId, Guid companyId, CancellationToken cancellationToken)
+    {
+        return Orders
+            .AsNoTracking()
+            .Include(o => o.Lines)
+            .Include(o => o.Receptions)
+            .FirstOrDefaultAsync(
+                o => o.Id == orderId && o.CompanyId == companyId,
+                cancellationToken);
+    }
+
+    public Task<Order?> FindOrderByIdAndCompanyIdForUpdateAsync(Guid orderId, Guid companyId, CancellationToken cancellationToken)
+    {
+        return Orders
+            .Include(o => o.Lines)
+            .Include(o => o.Receptions)
+            .FirstOrDefaultAsync(
+                o => o.Id == orderId && o.CompanyId == companyId,
+                cancellationToken);
+    }
+
+    public Task<OrderLine?> FindOrderLineByIdAndCompanyIdAsync(Guid orderLineId, Guid companyId, CancellationToken cancellationToken)
+    {
+        return OrderLines.FirstOrDefaultAsync(
+            line => line.Id == orderLineId && line.CompanyId == companyId,
+            cancellationToken);
+    }
+
+    public Task<int> CountOrdersForDateAsync(Guid companyId, DateOnly orderDate, CancellationToken cancellationToken)
+    {
+        return Orders
+            .AsNoTracking()
+            .CountAsync(o => o.CompanyId == companyId && o.OrderDate == orderDate, cancellationToken);
+    }
+
+    public async Task<(IReadOnlyList<Order> Items, int Total)> GetOrdersPagedAsync(
+        Guid companyId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        var baseQuery = Orders
+            .AsNoTracking()
+            .Where(o => o.CompanyId == companyId);
+
+        var total = await baseQuery.CountAsync(cancellationToken);
+
+        var items = await baseQuery
+            .Include(o => o.Lines)
+            .Include(o => o.Receptions)
+            .OrderByDescending(o => o.UpdatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, total);
     }
 
     public void AddCategory(Category category)
@@ -1462,6 +1562,16 @@ public class AppDbContext : DbContext, IAppDbContext
                 .Where(x => x.CompanyId == companyId)
                 .ToListAsync(ct);
             Receptions.RemoveRange(receptions);
+
+            var orderLines = await OrderLines
+                .Where(x => x.CompanyId == companyId)
+                .ToListAsync(ct);
+            OrderLines.RemoveRange(orderLines);
+
+            var orders = await Orders
+                .Where(x => x.CompanyId == companyId)
+                .ToListAsync(ct);
+            Orders.RemoveRange(orders);
 
             var products = await Products
                 .IgnoreQueryFilters()

@@ -31,6 +31,7 @@ public sealed class GetReceptionByIdUseCase
             reception.Status,
             reception.AccountId,
             reception.SupplierId,
+            reception.OrderId,
             reception.CreatedAt);
     }
 }

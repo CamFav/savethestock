@@ -46,8 +46,10 @@ public sealed class SuppliersController : ControllerBase
     {
         try
         {
-            var result = await _create.ExecuteAsync(new CreateSupplierInput(request.Name), cancellationToken);
-            return StatusCode(StatusCodes.Status201Created, new SupplierResponse(result.Id, result.Name));
+            var result = await _create.ExecuteAsync(
+                new CreateSupplierInput(request.Name, request.Email, request.Phone),
+                cancellationToken);
+            return StatusCode(StatusCodes.Status201Created, new SupplierResponse(result.Id, result.Name, result.Email, result.Phone));
         }
         catch (UnauthorizedAccessException)
         {
@@ -69,7 +71,7 @@ public sealed class SuppliersController : ControllerBase
         try
         {
             var result = await _getById.ExecuteAsync(new GetSupplierByIdInput(id), cancellationToken);
-            return Ok(new SupplierResponse(result.Id, result.Name));
+            return Ok(new SupplierResponse(result.Id, result.Name, result.Email, result.Phone));
         }
         catch (UnauthorizedAccessException)
         {
@@ -98,7 +100,7 @@ public sealed class SuppliersController : ControllerBase
                 cancellationToken);
 
             var items = result.Items
-                .Select(i => new SupplierResponse(i.Id, i.Name))
+                .Select(i => new SupplierResponse(i.Id, i.Name, i.Email, i.Phone))
                 .ToList()
                 .AsReadOnly();
 
@@ -123,7 +125,9 @@ public sealed class SuppliersController : ControllerBase
     {
         try
         {
-            await _update.ExecuteAsync(new UpdateSupplierInput(id, request.Name), cancellationToken);
+            await _update.ExecuteAsync(
+                new UpdateSupplierInput(id, request.Name, request.Email, request.Phone),
+                cancellationToken);
             return NoContent();
         }
         catch (UnauthorizedAccessException)

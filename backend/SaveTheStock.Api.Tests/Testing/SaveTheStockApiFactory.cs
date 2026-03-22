@@ -20,7 +20,7 @@ public sealed class SaveTheStockApiFactory : WebApplicationFactory<SaveTheStock.
     {
         builder.UseEnvironment("Development");
 
-        var contentRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../SaveTheStock.Api"));
+        var contentRoot = ResolveApiContentRoot();
         builder.UseContentRoot(contentRoot);
 
         builder.ConfigureServices(services =>
@@ -41,5 +41,23 @@ public sealed class SaveTheStockApiFactory : WebApplicationFactory<SaveTheStock.
                 options.UseInternalServiceProvider(inMemoryProvider);
             });
         });
+    }
+
+    private static string ResolveApiContentRoot()
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+
+        while (current is not null)
+        {
+            var candidate = Path.Combine(current.FullName, "SaveTheStock.Api");
+            if (Directory.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            current = current.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Unable to locate the SaveTheStock.Api content root for integration tests.");
     }
 }

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SaveTheStock.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using SaveTheStock.Infrastructure.Persistence;
 namespace SaveTheStock.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260320212223_AddSupplierContactFields")]
+    partial class AddSupplierContactFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -72,8 +75,8 @@ namespace SaveTheStock.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_account");
 
-                    b.HasAlternateKey("CompanyId", "Id")
-                        .HasName("ak_account_company_id_id");
+                    b.HasIndex("CompanyId")
+                        .HasDatabaseName("ix_account_company_id");
 
                     b.HasIndex("Email")
                         .IsUnique()
@@ -407,151 +410,6 @@ namespace SaveTheStock.Infrastructure.Persistence.Migrations
                     b.ToTable("lots", (string)null);
                 });
 
-            modelBuilder.Entity("SaveTheStock.Domain.Entities.Order", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<Guid>("AccountId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("account_id");
-
-                    b.Property<Guid>("CompanyId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("company_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("text")
-                        .HasColumnName("notes");
-
-                    b.Property<DateOnly>("OrderDate")
-                        .HasColumnType("date")
-                        .HasColumnName("order_date");
-
-                    b.Property<string>("Reference")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("reference");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasColumnName("status");
-
-                    b.Property<Guid?>("SupplierId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("supplier_id");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id")
-                        .HasName("pk_orders");
-
-                    b.HasAlternateKey("CompanyId", "Id")
-                        .HasName("ak_orders_company_id_id");
-
-                    b.HasIndex("CompanyId")
-                        .HasDatabaseName("ix_orders_company_id");
-
-                    b.HasIndex("CompanyId", "AccountId")
-                        .HasDatabaseName("ix_orders_company_id_account_id");
-
-                    b.HasIndex("CompanyId", "OrderDate")
-                        .HasDatabaseName("ix_orders_company_id_order_date");
-
-                    b.HasIndex("CompanyId", "Reference")
-                        .IsUnique()
-                        .HasDatabaseName("ix_orders_company_id_reference");
-
-                    b.HasIndex("CompanyId", "Status")
-                        .HasDatabaseName("ix_orders_company_id_status");
-
-                    b.HasIndex("CompanyId", "SupplierId")
-                        .HasDatabaseName("ix_orders_company_id_supplier_id");
-
-                    b.ToTable("orders", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_orders_status", "status in ('DRAFT', 'SENT', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELLED')");
-                        });
-                });
-
-            modelBuilder.Entity("SaveTheStock.Domain.Entities.OrderLine", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<Guid>("CompanyId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("company_id");
-
-                    b.Property<Guid>("OrderId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("order_id");
-
-                    b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("product_id");
-
-                    b.Property<string>("ProductName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("product_name");
-
-                    b.Property<decimal>("QuantityOrdered")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("numeric(18,3)")
-                        .HasColumnName("quantity_ordered");
-
-                    b.Property<decimal>("QuantityReceived")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("numeric(18,3)")
-                        .HasColumnName("quantity_received");
-
-                    b.Property<string>("Unit")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)")
-                        .HasColumnName("unit");
-
-                    b.Property<decimal?>("UnitPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("unit_price");
-
-                    b.HasKey("Id")
-                        .HasName("pk_order_line");
-
-                    b.HasIndex("CompanyId", "OrderId")
-                        .HasDatabaseName("ix_order_line_company_id_order_id");
-
-                    b.HasIndex("CompanyId", "ProductId")
-                        .HasDatabaseName("ix_order_line_company_id_product_id");
-
-                    b.HasIndex("CompanyId", "OrderId", "ProductId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_order_line_company_id_order_id_product_id");
-
-                    b.ToTable("order_line", null, t =>
-                        {
-                            t.HasCheckConstraint("ck_order_line_quantity_ordered_positive", "quantity_ordered > 0");
-
-                            t.HasCheckConstraint("ck_order_line_quantity_received_non_negative", "quantity_received >= 0");
-                        });
-                });
-
             modelBuilder.Entity("SaveTheStock.Domain.Entities.Product", b =>
                 {
                     b.Property<Guid>("Id")
@@ -646,10 +504,6 @@ namespace SaveTheStock.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("issue_note");
 
-                    b.Property<Guid?>("OrderId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("order_id");
-
                     b.Property<DateOnly>("ReceptionDate")
                         .HasColumnType("date")
                         .HasColumnName("reception_date");
@@ -680,9 +534,6 @@ namespace SaveTheStock.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CompanyId")
                         .HasDatabaseName("ix_receptions_company_id");
-
-                    b.HasIndex("CompanyId", "OrderId")
-                        .HasDatabaseName("ix_receptions_company_id_order_id");
 
                     b.HasIndex("CompanyId", "ReceptionDate")
                         .HasDatabaseName("ix_receptions_company_id_reception_date");
@@ -920,50 +771,6 @@ namespace SaveTheStock.Infrastructure.Persistence.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("SaveTheStock.Domain.Entities.Order", b =>
-                {
-                    b.HasOne("SaveTheStock.Domain.Entities.Account", "Account")
-                        .WithMany()
-                        .HasForeignKey("CompanyId", "AccountId")
-                        .HasPrincipalKey("CompanyId", "Id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_orders_account_company_id_account_id");
-
-                    b.HasOne("SaveTheStock.Domain.Entities.Supplier", "Supplier")
-                        .WithMany()
-                        .HasForeignKey("CompanyId", "SupplierId")
-                        .HasPrincipalKey("CompanyId", "Id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_orders_suppliers_company_id_supplier_id");
-
-                    b.Navigation("Account");
-
-                    b.Navigation("Supplier");
-                });
-
-            modelBuilder.Entity("SaveTheStock.Domain.Entities.OrderLine", b =>
-                {
-                    b.HasOne("SaveTheStock.Domain.Entities.Order", "Order")
-                        .WithMany("Lines")
-                        .HasForeignKey("CompanyId", "OrderId")
-                        .HasPrincipalKey("CompanyId", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_order_line_orders_company_id_order_id");
-
-                    b.HasOne("SaveTheStock.Domain.Entities.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("CompanyId", "ProductId")
-                        .HasPrincipalKey("CompanyId", "Id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_order_line_products_company_id_product_id");
-
-                    b.Navigation("Order");
-
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("SaveTheStock.Domain.Entities.Product", b =>
                 {
                     b.HasOne("SaveTheStock.Domain.Entities.Category", "Category")
@@ -986,16 +793,7 @@ namespace SaveTheStock.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_receptions_accounts_account_id");
 
-                    b.HasOne("SaveTheStock.Domain.Entities.Order", "Order")
-                        .WithMany("Receptions")
-                        .HasForeignKey("CompanyId", "OrderId")
-                        .HasPrincipalKey("CompanyId", "Id")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_receptions_orders_company_id_order_id");
-
                     b.Navigation("Account");
-
-                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("SaveTheStock.Domain.Entities.WasteLine", b =>
@@ -1035,13 +833,6 @@ namespace SaveTheStock.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("SaveTheStock.Domain.Entities.Inventory", b =>
                 {
                     b.Navigation("Lines");
-                });
-
-            modelBuilder.Entity("SaveTheStock.Domain.Entities.Order", b =>
-                {
-                    b.Navigation("Lines");
-
-                    b.Navigation("Receptions");
                 });
 
             modelBuilder.Entity("SaveTheStock.Domain.Entities.WasteSession", b =>

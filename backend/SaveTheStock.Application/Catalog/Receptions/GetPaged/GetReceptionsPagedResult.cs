@@ -10,6 +10,7 @@ public sealed record ReceptionItem(
     string Status,
     Guid AccountId,
     Guid? SupplierId,
+    Guid? OrderId,
     DateTime CreatedAt);
 
 public sealed record GetReceptionsPagedResult(

@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>artifacts/obj/</BaseIntermediateOutputPath>
+    <MSBuildProjectExtensionsPath>artifacts/obj/</MSBuildProjectExtensionsPath>
+    <BaseOutputPath>artifacts/bin/</BaseOutputPath>
+    <DefaultItemExcludes>$(DefaultItemExcludes);artifacts/**</DefaultItemExcludes>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+  </PropertyGroup>
+</Project>

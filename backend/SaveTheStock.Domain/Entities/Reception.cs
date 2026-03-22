@@ -22,6 +22,8 @@ public class Reception
     public Account? Account { get; set; }
 
     public Guid? SupplierId { get; set; }
+    public Guid? OrderId { get; set; }
+    public Order? Order { get; set; }
 
     public DateTime CreatedAt { get; set; }
     public DateTime? DeletedAt { get; set; }

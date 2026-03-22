@@ -33,6 +33,7 @@ public sealed class CreateReceptionUseCase
             Status = "Draft",
             AccountId = accountId,
             SupplierId = input.SupplierId,
+            OrderId = null,
             CreatedAt = now,
             DeletedAt = null
         };
@@ -50,6 +51,7 @@ public sealed class CreateReceptionUseCase
             reception.Status,
             reception.AccountId,
             reception.SupplierId,
+            reception.OrderId,
             reception.CreatedAt);
     }
 }

@@ -27,6 +27,6 @@ public sealed class GetSupplierByIdUseCase
         if (supplier is null)
             throw new InvalidOperationException("not_found");
 
-        return new GetSupplierByIdResult(supplier.Id, supplier.Name);
+        return new GetSupplierByIdResult(supplier.Id, supplier.Name, supplier.Email, supplier.Phone);
     }
 }

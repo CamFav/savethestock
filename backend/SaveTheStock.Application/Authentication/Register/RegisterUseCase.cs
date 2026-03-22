@@ -74,6 +74,7 @@ public sealed class RegisterUseCase
             token,
             ownerAccount.Id,
             company.Id,
+            company.Name,
             ownerAccount.Role,
             ownerAccount.DisplayName);
     }

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using SaveTheStock.Api.Contracts.Auth;
 using SaveTheStock.Api.Contracts.Companies;
@@ -63,7 +64,53 @@ internal static class AccountsAuthTestHelper
         DateTime? deletedAt = null,
         bool useTemporaryPassword = false)
     {
-        using var scope = factory.Services.CreateScope();
+        return await SeedAccountAsync(
+            factory.Services,
+            companyId,
+            email,
+            displayName,
+            role,
+            password,
+            isActive,
+            deletedAt,
+            useTemporaryPassword);
+    }
+
+    public static async Task<Guid> SeedAccountAsync(
+        WebApplicationFactory<SaveTheStock.Api.Program> factory,
+        Guid companyId,
+        string email,
+        string displayName,
+        string role,
+        string password,
+        bool isActive = true,
+        DateTime? deletedAt = null,
+        bool useTemporaryPassword = false)
+    {
+        return await SeedAccountAsync(
+            factory.Services,
+            companyId,
+            email,
+            displayName,
+            role,
+            password,
+            isActive,
+            deletedAt,
+            useTemporaryPassword);
+    }
+
+    private static async Task<Guid> SeedAccountAsync(
+        IServiceProvider services,
+        Guid companyId,
+        string email,
+        string displayName,
+        string role,
+        string password,
+        bool isActive,
+        DateTime? deletedAt,
+        bool useTemporaryPassword)
+    {
+        using var scope = services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var accountId = Guid.NewGuid();

@@ -10,4 +10,5 @@ public sealed record ReceptionResponse(
     string Status,
     Guid AccountId,
     Guid? SupplierId,
+    Guid? OrderId,
     DateTime CreatedAt);

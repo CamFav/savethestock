@@ -25,6 +25,23 @@ public interface IAppDbContext
     Task<int> CountActiveOwnersAsync(Guid companyId, CancellationToken cancellationToken);
     Task<bool> AccountHasBusinessHistoryAsync(Guid companyId, Guid accountId, CancellationToken cancellationToken);
 
+    // Orders
+    void AddOrder(Order order);
+    void AddOrderLine(OrderLine orderLine);
+    void RemoveOrder(Order order);
+    void RemoveOrderLine(OrderLine orderLine);
+
+    Task<Order?> FindDraftOrderByCompanyIdAsync(Guid companyId, CancellationToken cancellationToken);
+    Task<Order?> FindOrderByIdAndCompanyIdAsync(Guid orderId, Guid companyId, CancellationToken cancellationToken);
+    Task<Order?> FindOrderByIdAndCompanyIdForUpdateAsync(Guid orderId, Guid companyId, CancellationToken cancellationToken);
+    Task<OrderLine?> FindOrderLineByIdAndCompanyIdAsync(Guid orderLineId, Guid companyId, CancellationToken cancellationToken);
+    Task<int> CountOrdersForDateAsync(Guid companyId, DateOnly orderDate, CancellationToken cancellationToken);
+    Task<(IReadOnlyList<Order> Items, int Total)> GetOrdersPagedAsync(
+        Guid companyId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken);
+
     // Catalog - Categories
     void AddCategory(Category category);
 

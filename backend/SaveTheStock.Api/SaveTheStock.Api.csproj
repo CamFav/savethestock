@@ -26,6 +26,7 @@
     <Compile Include="Controllers/**/*.cs" />
     <Compile Include="Contracts/**/*.cs" />
     <Compile Include="Options/**/*.cs" />
+    <Compile Include="Security/**/*.cs" />
     <Compile Include="Services/**/*.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Program.Partial.cs" />

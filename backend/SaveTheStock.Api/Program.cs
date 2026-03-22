@@ -37,6 +37,18 @@ using SaveTheStock.Application.Catalog.Receptions.GetById;
 using SaveTheStock.Application.Catalog.Receptions.GetPaged;
 using SaveTheStock.Application.Catalog.Receptions.Delete;
 using SaveTheStock.Application.Catalog.Receptions.Update;
+using SaveTheStock.Application.Catalog.Orders.CreateDraft;
+using SaveTheStock.Application.Catalog.Orders.GetById;
+using SaveTheStock.Application.Catalog.Orders.GetPaged;
+using SaveTheStock.Application.Catalog.Orders.AddToDraft;
+using SaveTheStock.Application.Catalog.Orders.Update;
+using SaveTheStock.Application.Catalog.Orders.AddLine;
+using SaveTheStock.Application.Catalog.Orders.UpdateLine;
+using SaveTheStock.Application.Catalog.Orders.RemoveLine;
+using SaveTheStock.Application.Catalog.Orders.Delete;
+using SaveTheStock.Application.Catalog.Orders.Send;
+using SaveTheStock.Application.Catalog.Orders.Cancel;
+using SaveTheStock.Application.Catalog.Orders.RecordReception;
 using SaveTheStock.Application.Directory.Suppliers.Create;
 using SaveTheStock.Application.Directory.Suppliers.Delete;
 using SaveTheStock.Application.Directory.Suppliers.GetById;
@@ -61,16 +73,33 @@ using SaveTheStock.Application.Catalog.Dashboard;
 using SaveTheStock.Application.Catalog.Operational;
 using SaveTheStock.Api.Options;
 using SaveTheStock.Application.Companies.Delete;
+using SaveTheStock.Api.Security;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // jwt binding
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+builder.Services.Configure<SecurityHardeningOptions>(builder.Configuration.GetSection("Security"));
 
 builder.Services.AddProblemDetails();
 
 // mvc controllers
-builder.Services.AddControllers();
+builder.Services
+    .AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var details = new ValidationProblemDetails(context.ModelState)
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "Validation failed.",
+            };
+
+            return new BadRequestObjectResult(details);
+        };
+    });
 
 // registers services for swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -129,11 +158,15 @@ builder.Services.AddCors(options =>
 builder.Services.Configure<DevelopmentSeedOptions>(
     builder.Configuration.GetSection("DevSeed"));
 
+builder.Services.AddMemoryCache();
+
 // authentication services
 builder.Services.AddScoped<SaveTheStock.Application.Authentication.IJwtTokenGenerator, SaveTheStock.Infrastructure.Authentication.JwtTokenGenerator>();
 builder.Services.AddScoped<IPasswordHasher<Account>, PasswordHasher<Account>>();
 
 builder.Services.AddScoped<IPasswordService, PasswordService>();
+builder.Services.AddSingleton<LoginProtectionService>();
+builder.Services.AddSingleton<AuthCookieService>();
 
 // http context accessor
 builder.Services.AddHttpContextAccessor();
@@ -171,6 +204,23 @@ builder.Services
 
         options.Events = new JwtBearerEvents
         {
+            OnMessageReceived = context =>
+            {
+                if (!string.IsNullOrWhiteSpace(context.Token))
+                {
+                    return Task.CompletedTask;
+                }
+
+                var cookieService = context.HttpContext.RequestServices.GetRequiredService<AuthCookieService>();
+                if (cookieService.IsEnabled &&
+                    context.HttpContext.Request.Cookies.TryGetValue(cookieService.CookieName, out var cookieToken) &&
+                    !string.IsNullOrWhiteSpace(cookieToken))
+                {
+                    context.Token = cookieToken;
+                }
+
+                return Task.CompletedTask;
+            },
             OnTokenValidated = async context =>
             {
                 var accountClaim = context.Principal?.FindFirst("account_id")?.Value;
@@ -242,6 +292,19 @@ builder.Services.AddScoped<GetReceptionByIdUseCase>();
 builder.Services.AddScoped<GetReceptionsPagedUseCase>();
 builder.Services.AddScoped<DeleteReceptionUseCase>();
 builder.Services.AddScoped<UpdateReceptionUseCase>();
+// orders use cases
+builder.Services.AddScoped<CreateDraftOrderUseCase>();
+builder.Services.AddScoped<GetOrderByIdUseCase>();
+builder.Services.AddScoped<GetOrdersPagedUseCase>();
+builder.Services.AddScoped<AddProductToDraftOrderUseCase>();
+builder.Services.AddScoped<UpdateOrderUseCase>();
+builder.Services.AddScoped<AddOrderLineUseCase>();
+builder.Services.AddScoped<UpdateOrderLineUseCase>();
+builder.Services.AddScoped<RemoveOrderLineUseCase>();
+builder.Services.AddScoped<DeleteOrderUseCase>();
+builder.Services.AddScoped<SendOrderUseCase>();
+builder.Services.AddScoped<CancelOrderUseCase>();
+builder.Services.AddScoped<RecordOrderReceptionUseCase>();
 // suppliers use cases
 builder.Services.AddScoped<CreateSupplierUseCase>();
 builder.Services.AddScoped<GetSupplierByIdUseCase>();
@@ -304,6 +367,7 @@ app.Use(async (context, next) =>
 });
 
 app.UseCors("Frontend");
+app.UseMiddleware<CsrfProtectionMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();

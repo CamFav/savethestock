@@ -29,7 +29,7 @@ public sealed class GetSuppliersPagedUseCase
             cancellationToken);
 
         var mapped = items
-            .Select(s => new GetSuppliersPagedItem(s.Id, s.Name))
+            .Select(s => new GetSuppliersPagedItem(s.Id, s.Name, s.Email, s.Phone))
             .ToList()
             .AsReadOnly();
 

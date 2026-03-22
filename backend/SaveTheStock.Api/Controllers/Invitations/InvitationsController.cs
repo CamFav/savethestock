@@ -10,6 +10,9 @@ using SaveTheStock.Application.Common.Security;
 using SaveTheStock.Application.Common.Utilities;
 using SaveTheStock.Domain.Entities;
 using SaveTheStock.Infrastructure.Persistence;
+using SaveTheStock.Application.Options;
+using Microsoft.Extensions.Options;
+using SaveTheStock.Api.Security;
 
 namespace SaveTheStock.Api.Controllers.Invitations;
 
@@ -21,17 +24,26 @@ public sealed class InvitationsController : ControllerBase
     private readonly ICurrentUser _currentUser;
     private readonly IPasswordService _passwordService;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly JwtOptions _jwtOptions;
+    private readonly AuthCookieService _authCookieService;
+    private readonly ILogger<InvitationsController> _logger;
 
     public InvitationsController(
         AppDbContext dbContext,
         ICurrentUser currentUser,
         IPasswordService passwordService,
-        IJwtTokenGenerator jwtTokenGenerator)
+        IJwtTokenGenerator jwtTokenGenerator,
+        IOptions<JwtOptions> jwtOptions,
+        AuthCookieService authCookieService,
+        ILogger<InvitationsController> logger)
     {
         _dbContext = dbContext;
         _currentUser = currentUser;
         _passwordService = passwordService;
         _jwtTokenGenerator = jwtTokenGenerator;
+        _jwtOptions = jwtOptions.Value;
+        _authCookieService = authCookieService;
+        _logger = logger;
     }
 
     [Authorize(Policy = AuthorizationPolicies.OwnerOnly)]
@@ -322,11 +334,19 @@ public sealed class InvitationsController : ControllerBase
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         var jwt = _jwtTokenGenerator.GenerateToken(account.Id, account.CompanyId, account.Role);
+        _authCookieService.AppendAuthCookies(HttpContext, jwt.Token, jwt.ExpiresAt);
+        _logger.LogInformation(
+            "Security audit: invitation accepted for account {AccountId} in company {CompanyId} from IP {ClientIp}.",
+            account.Id,
+            account.CompanyId,
+            HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
 
         return Ok(new LoginResponse(
             jwt.Token,
             account.Id,
             account.CompanyId,
+            invitation.Company.Name,
+            _jwtOptions.ExpiresMinutes,
             account.Role,
             account.DisplayName));
     }

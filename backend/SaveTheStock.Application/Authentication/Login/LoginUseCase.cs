@@ -30,26 +30,30 @@ public sealed class LoginUseCase
         if (string.IsNullOrWhiteSpace(normalizedEmail) ||
             string.IsNullOrWhiteSpace(password))
         {
-            throw new UnauthorizedAccessException("Invalid credentials.");
+            throw new InvalidOperationException("missing_credentials");
         }
 
         var account = await _db.FindActiveAccountByNormalizedEmailAsync(normalizedEmail, cancellationToken);
 
         if (account is null)
-            throw new UnauthorizedAccessException("Invalid credentials.");
+            throw new InvalidOperationException("account_not_found");
+
+        var companyName = account.Company?.Name?.Trim();
+        if (string.IsNullOrWhiteSpace(companyName))
+            throw new InvalidOperationException("account_not_found");
 
         var storedPasswordHash = account.PasswordHash;
         if (string.IsNullOrWhiteSpace(storedPasswordHash))
-            throw new UnauthorizedAccessException("Invalid credentials.");
+            throw new InvalidOperationException("invalid_password");
 
         storedPasswordHash = TemporaryPassword.ExtractIfTemporary(storedPasswordHash);
 
         if (string.IsNullOrWhiteSpace(storedPasswordHash))
-            throw new UnauthorizedAccessException("Invalid credentials.");
+            throw new InvalidOperationException("invalid_password");
 
         var passwordValid = _passwords.VerifyPassword(account, storedPasswordHash, password);
         if (!passwordValid)
-            throw new UnauthorizedAccessException("Invalid credentials.");
+            throw new InvalidOperationException("invalid_password");
 
         var role = account.Role.ToString();
         var (token, _) = _jwtTokenGenerator.GenerateToken(account.Id, account.CompanyId, role);
@@ -58,6 +62,7 @@ public sealed class LoginUseCase
             token,
             account.Id,
             account.CompanyId,
+            companyName,
             role,
             account.DisplayName);
     }

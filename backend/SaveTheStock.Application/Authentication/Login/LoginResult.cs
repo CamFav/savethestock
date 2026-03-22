@@ -7,6 +7,7 @@ public sealed record LoginResult(
     string JwtToken,
     Guid AccountId,
     Guid CompanyId,
+    string CompanyName,
     string Role,
     string DisplayName
 );

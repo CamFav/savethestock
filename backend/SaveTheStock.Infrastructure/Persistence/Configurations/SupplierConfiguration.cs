@@ -20,6 +20,12 @@ public sealed class SupplierConfiguration : IEntityTypeConfiguration<Supplier>
             .HasMaxLength(200)
             .IsRequired();
 
+        builder.Property(x => x.Email)
+            .HasMaxLength(255);
+
+        builder.Property(x => x.Phone)
+            .HasMaxLength(40);
+
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.DeletedAt);
 

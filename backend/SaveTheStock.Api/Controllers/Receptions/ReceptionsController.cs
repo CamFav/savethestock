@@ -62,6 +62,7 @@ public sealed class ReceptionsController : ControllerBase
                 result.Status,
                 result.AccountId,
                 result.SupplierId,
+                result.OrderId,
                 result.CreatedAt));
         }
         catch (UnauthorizedAccessException)
@@ -97,6 +98,7 @@ public sealed class ReceptionsController : ControllerBase
                 result.Status,
                 result.AccountId,
                 result.SupplierId,
+                result.OrderId,
                 result.CreatedAt));
         }
         catch (UnauthorizedAccessException)
@@ -136,6 +138,7 @@ public sealed class ReceptionsController : ControllerBase
                 x.Status,
                 x.AccountId,
                 x.SupplierId,
+                x.OrderId,
                 x.CreatedAt)).ToList();
 
             return Ok(new PagedReceptionsResponse(items, result.Page, result.PageSize, result.Total));
