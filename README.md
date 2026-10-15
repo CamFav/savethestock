@@ -217,6 +217,48 @@ Le backend applique des contrôles d'authentification et d'autorisation afin de 
 
 ---
 
+
+## 📐 Conception et modélisation
+
+La conception de SaveTheStock s'appuie sur une modélisation des données, des interactions utilisateur et de l'architecture applicative.
+
+Les diagrammes ci-dessous présentent les principales décisions de conception du projet.
+
+### 🗄️ Modèle physique de données (MPD)
+
+Le modèle physique de données décrit la structure de la base PostgreSQL, les entités métier, leurs relations et les contraintes associées.
+
+Il couvre notamment les entreprises, comptes, produits, catégories, fournisseurs, commandes, réceptions, lots, inventaires et pertes.
+
+[![Modèle physique de données](docs/diagrams/mpd.png)](docs/diagrams/mpd.png)
+
+### 🧩 Diagramme d'architecture applicative
+
+Ce diagramme présente les principaux composants techniques de SaveTheStock et leurs interactions :
+
+- Frontend React / TypeScript ;
+- API REST ASP.NET Core ;
+- Couches Domain, Application et Infrastructure ;
+- Base PostgreSQL ;
+- Infrastructure Docker et pipeline GitHub Actions.
+
+[![Architecture applicative](docs/diagrams/architecture.png)](docs/diagrams/architecture.png)
+
+### 👥 Diagramme de cas d'utilisation
+
+Le diagramme de cas d'utilisation présente les interactions entre les acteurs du système et les principales fonctionnalités.
+
+Il permet notamment de visualiser les responsabilités des membres et des propriétaires d'entreprise.
+
+[![Diagramme de cas d'utilisation](docs/diagrams/use-cases.png)](docs/diagrams/use-cases.png)
+
+### 📂 Documentation technique
+
+Les diagrammes sont disponibles dans le dossier [`docs/diagrams/`](docs/diagrams/).
+
+---
+
+
 ## 🛠️ Installation locale
 
 ### Prérequis
