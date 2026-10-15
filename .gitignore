@@ -77,3 +77,26 @@ backups/
 # =========================
 *.tmp
 *.swp
+
+# Local maintenance scripts
+/scripts/
+
+# Windows-generated .NET artifact paths
+*bin\Debug*
+*bin\Release*
+*obj\Debug*
+*obj\Release*
+
+# Visual Studio
+.vs/
+
+# Local backups and dumps
+*.bak
+*.dump
+*.sql.gz
+
+# .NET build artifacts
+bin?Debug/
+bin?Release/
+obj?Debug/
+obj?Release/

@@ -35,8 +35,8 @@ function getApiErrorMessage(error: ApiError, fallback: string): string {
     }
   }
 
-  if (error.status === 404) return "Categorie introuvable.";
-  if (error.status === 400) return error.message ?? "Requete invalide.";
+  if (error.status === 404) return "Catégorie introuvable.";
+  if (error.status === 400) return error.message ?? "Requête invalide.";
   if (error.status === 401) return "Votre session a expiré.";
   return error.message ?? fallback;
 }
@@ -95,7 +95,7 @@ export function CategoriesPage() {
     async (name: string) => {
       try {
         await createCategoryMutation.mutateAsync({ name });
-        toast.success("Categorie creee.");
+        toast.success("Catégorie créée.");
         closeDialog();
       } catch (error) {
         toast.error(getApiErrorMessage(error as ApiError, "Impossible de créer la catégorie."));
@@ -112,7 +112,7 @@ export function CategoriesPage() {
 
       try {
         await updateCategoryMutation.mutateAsync({ id: editTarget.id, name });
-        toast.success("Categorie mise a jour.");
+        toast.success("Catégorie mise à jour.");
         closeDialog();
       } catch (error) {
         toast.error(getApiErrorMessage(error as ApiError, "Impossible de mettre à jour la catégorie."));
@@ -128,7 +128,7 @@ export function CategoriesPage() {
 
     try {
       await deleteCategoryMutation.mutateAsync({ id: deleteTarget.id });
-      toast.success("Categorie supprimee.");
+      toast.success("Catégorie supprimée.");
       closeDeleteDialog();
     } catch (error) {
       toast.error(getApiErrorMessage(error as ApiError, "Impossible de supprimer la catégorie."));
@@ -149,9 +149,9 @@ export function CategoriesPage() {
 
     return (
       <section className="page-shell space-y-6">
-        <PageHeader title="Categories" description="Structure de classement commune a tout le catalogue." />
+        <PageHeader title="Catégories" description="Structure de classement commune à tout le catalogue." />
 
-        <SectionCard title="Impossible de charger les categories" description={getApiErrorMessage(error, "Une erreur inattendue est survenue.")}>
+        <SectionCard title="Impossible de charger les catégories" description={getApiErrorMessage(error, "Une erreur inattendue est survenue.")}>
           <Button onClick={() => categoriesQuery.refetch()}>Réessayer</Button>
         </SectionCard>
       </section>
@@ -166,13 +166,13 @@ export function CategoriesPage() {
           <p className="page-eyebrow">Organisation du catalogue</p>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-3">
-              <h1 className="page-title">Categories</h1>
+              <h1 className="page-title">Catégories</h1>
               <p className="page-description">
-                Des catégories simples rendent la recherche plus rapide dans le catalogue et aident l'équipe à retrouver les produits en un coup d'œil.
+                Gérer vos catégories simplement.
               </p>
             </div>
             <div className="rounded-[22px] border border-border/70 bg-white/80 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Categories actives</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Catégories actives</p>
               <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-foreground">{total}</p>
             </div>
           </div>
@@ -182,7 +182,7 @@ export function CategoriesPage() {
       <PageHeader
         title={
           <div className="flex flex-wrap items-center gap-2">
-            <span>Categories</span>
+            <span>Catégories</span>
             {!canManage ? (
               <span className="inline-flex rounded-full border border-slate-300 bg-slate-50 px-2 py-0.5 text-xs text-slate-600">
                 Consultation seule
@@ -190,7 +190,7 @@ export function CategoriesPage() {
             ) : null}
           </div>
         }
-        description="Ajoutez et entretenez des familles claires pour garder le catalogue lisible."
+        description="Ajoutez et entretenez des catégories claires pour garder le catalogue lisible."
         actions={
           <Button onClick={openCreateDialog} disabled={!canManage}>
             <Plus className="h-4 w-4" />

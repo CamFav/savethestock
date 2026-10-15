@@ -176,7 +176,7 @@ export function TodayPage() {
   return (
     <section className="page-shell-wide space-y-6">
       <ModuleHeroHeader
-        eyebrow="Priorites du jour"
+        eyebrow="Priorités du jour"
         title="Aujourd’hui"
         description="Voyez ce qui demande votre attention."
         tone="today"
@@ -370,12 +370,12 @@ export function TodayPage() {
           )}
         </SectionCard>
 
-        <SectionCard title="Activite recente" description="Les dernieres operations utiles pour reprendre le fil du service.">
+        <SectionCard title="Activité récente" description="Les dernières opérations utiles pour reprendre le fil du service.">
           {receptionsQuery.isLoading || recentInventoriesQuery.isLoading || recentWasteQuery.isLoading ? (
             <SectionSkeleton rows={3} />
           ) : recentActivity.length === 0 ? (
             <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-              Aucune activite recente disponible.
+              Aucune activité récente disponible.
             </div>
           ) : (
             <ul className="space-y-3">

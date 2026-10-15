@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Copy, ShieldUser, Trash2, UserPlus, Users, XCircle } from "lucide-react";
+import { Copy, Trash2, UserPlus, Users, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useOutletContext, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ type SettingsOutletContext = {
 
 function getApiErrorMessage(error: ApiError, fallback: string): string {
   if (error.status === 401) return "Votre session a expiré.";
-  if (error.status === 403) return "Cette page est reservee au proprietaire.";
+  if (error.status === 403) return "Cette page est réservée au propriétaire.";
   return error.message ?? fallback;
 }
 
@@ -63,8 +63,7 @@ function MembersPageSkeleton() {
         <Skeleton className="h-4 w-80" />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Skeleton className="h-28 w-full" />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Skeleton className="h-28 w-full" />
         <Skeleton className="h-28 w-full" />
       </div>
@@ -102,8 +101,6 @@ export function AccountsPage() {
     () => invitations.filter((invitation) => invitation.status.toUpperCase() === "PENDING"),
     [invitations],
   );
-  const ownerCount = members.filter((account) => getAccountRole(account.role) === "OWNER").length;
-
   function setInviteOpen(open: boolean) {
     const next = new URLSearchParams(searchParams);
     if (open) next.set("invite", "1");
@@ -206,7 +203,7 @@ export function AccountsPage() {
         />
       )}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card className="border-border/70">
           <CardHeader className="pb-2">
             <CardDescription>Membres actifs</CardDescription>
@@ -218,21 +215,6 @@ export function AccountsPage() {
           <CardContent>
             <p className="text-sm text-muted-foreground">
               Personnes ayant actuellement accès à l’espace de travail de l’entreprise.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70">
-          <CardHeader className="pb-2">
-            <CardDescription>Proprietaires</CardDescription>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <ShieldUser className="h-5 w-5" />
-              {ownerCount}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Personnes autorisées à gérer les accès et les réglages importants.
             </p>
           </CardContent>
         </Card>

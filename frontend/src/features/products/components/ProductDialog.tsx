@@ -139,7 +139,7 @@ export function ProductDialog({
                 <FormItem>
                   <FormLabel>Nom</FormLabel>
                   <FormControl>
-                    <Input {...field} autoComplete="off" disabled={isSubmitting} maxLength={120} placeholder="Ex. Tomates concassees" />
+                    <Input {...field} autoComplete="off" disabled={isSubmitting} maxLength={120} placeholder="Ex. Tomates concassées" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -152,7 +152,7 @@ export function ProductDialog({
               rules={{ required: "La catégorie est requise." }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Categorie</FormLabel>
+                  <FormLabel>Catégorie</FormLabel>
                   <FormControl>
                     <select
                       className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
@@ -179,7 +179,7 @@ export function ProductDialog({
                 name="unit"
                 render={({ field }) => (
                   <FormItem>
-                      <FormLabel>Unite</FormLabel>
+                      <FormLabel>Unité</FormLabel>
                     <FormControl>
                       <select
                         className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"

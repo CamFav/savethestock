@@ -38,8 +38,8 @@ type StockProductRow = {
 
 function getApiErrorMessage(error: ApiError, fallback: string): string {
   if (error.status === 404) return "Lot introuvable.";
-  if (error.status === 409) return "Ce lot entre en conflit avec des donnees existantes.";
-  if (error.status === 400) return error.message ?? "Requete invalide.";
+  if (error.status === 409) return "Ce lot entre en conflit avec des données existantes.";
+  if (error.status === 400) return error.message ?? "Requête invalide.";
   if (error.status === 401) return "Votre session a expiré.";
   return error.message ?? fallback;
 }
@@ -89,7 +89,7 @@ function applyLocalFilters(
 }
 
 function formatCurrency(value: number | null): string {
-  if (value === null || !Number.isFinite(value)) return "Non renseigne";
+  if (value === null || !Number.isFinite(value)) return "Non renseigné";
   return new Intl.NumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
@@ -481,7 +481,7 @@ export function LotsPage() {
             </label>
 
             <label className="space-y-2">
-              <span className="block text-sm font-medium text-foreground">Categorie</span>
+              <span className="block text-sm font-medium text-foreground">Catégorie</span>
               <select
                 className="h-12 w-full rounded-[18px] border border-input bg-background px-3 text-sm"
                 value={filters.categoryId}
@@ -520,12 +520,12 @@ export function LotsPage() {
                 <thead className="border-b border-border/70 bg-muted/30 text-left">
                   <tr>
                     <th className="px-4 py-3 font-medium">Produit</th>
-                    <th className="px-4 py-3 font-medium">Categorie</th>
+                    <th className="px-4 py-3 font-medium">Catégorie</th>
                     <th className="px-4 py-3 font-medium">Disponible</th>
                     <th className="px-4 py-3 font-medium">Prix</th>
                     <th className="px-4 py-3 font-medium">Valeur</th>
                     <th className="px-4 py-3 font-medium">Lots</th>
-                    <th className="px-4 py-3 font-medium text-right">Acces</th>
+                    <th className="px-4 py-3 font-medium text-right">Accès</th>
                   </tr>
                 </thead>
                 <tbody>

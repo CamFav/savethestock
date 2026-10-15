@@ -57,7 +57,7 @@ public sealed class AddProductToDraftOrderUseCase
         }
         else
         {
-            draftOrder.Lines.Add(new OrderLine
+            var orderLine = new OrderLine
             {
                 Id = Guid.NewGuid(),
                 CompanyId = companyId,
@@ -68,7 +68,10 @@ public sealed class AddProductToDraftOrderUseCase
                 QuantityOrdered = quantity,
                 QuantityReceived = 0m,
                 UnitPrice = input.UnitPrice
-            });
+            };
+
+            draftOrder.Lines.Add(orderLine);
+            _db.AddOrderLine(orderLine);
         }
 
         draftOrder.UpdatedAt = DateTime.UtcNow;
