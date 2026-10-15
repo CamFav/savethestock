@@ -16,7 +16,7 @@ export function RequireRole({ allowedRoles, redirectTo = "/app/today" }: Require
 
   useEffect(() => {
     if (!isAllowed) {
-      toast.error("Cette page est reservee au proprietaire.");
+      toast.error("Cette page est réservée au propriétaire.");
     }
   }, [isAllowed, location.pathname]);
 

@@ -50,7 +50,7 @@ public sealed class AddOrderLineUseCase
         }
         else
         {
-            order.Lines.Add(new OrderLine
+            var orderLine = new OrderLine
             {
                 Id = Guid.NewGuid(),
                 CompanyId = companyId,
@@ -61,7 +61,10 @@ public sealed class AddOrderLineUseCase
                 QuantityOrdered = quantity,
                 QuantityReceived = 0m,
                 UnitPrice = input.UnitPrice
-            });
+            };
+
+            order.Lines.Add(orderLine);
+            _db.AddOrderLine(orderLine);
         }
 
         order.UpdatedAt = DateTime.UtcNow;

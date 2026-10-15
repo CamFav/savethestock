@@ -99,7 +99,7 @@ export function CategoryDialog({
                       autoComplete="off"
                       disabled={isSubmitting}
                       maxLength={100}
-                      placeholder="e.g. Fresh produce"
+                      placeholder="Ex. Produits frais"
                     />
                   </FormControl>
                   <FormMessage />

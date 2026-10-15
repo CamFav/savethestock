@@ -27,7 +27,7 @@ export function ProductsFilters({
     <div className="grid grid-cols-1 gap-3 md:grid-cols-[220px_180px_auto] md:items-end">
       <div className="space-y-1">
         <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground" htmlFor="products-category-filter">
-          Categorie
+          Catégorie
         </label>
         <select
           id="products-category-filter"
@@ -47,7 +47,7 @@ export function ProductsFilters({
 
       <div className="space-y-1">
         <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground" htmlFor="products-status-filter">
-          Etat
+          État
         </label>
         <select
           id="products-status-filter"
@@ -65,7 +65,7 @@ export function ProductsFilters({
       {hasActiveFilters && (
         <Button className="md:self-end" disabled={disabled} type="button" variant="outline" onClick={onReset}>
           <RotateCcw className="h-4 w-4" />
-          Reinitialiser
+          Réinitialiser
         </Button>
       )}
     </div>

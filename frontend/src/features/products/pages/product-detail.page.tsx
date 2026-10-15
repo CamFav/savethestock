@@ -186,25 +186,37 @@ export function ProductDetailPage() {
   }, [lots]);
 
   const recentWaste = useMemo(() => {
-    return (wasteQuery.data?.items ?? []).map((session) => {
-      const productLines = session.lines.filter((line) => productLotIds.has(line.lotId));
-      return {
-        ...session,
-        productLines,
-        productQty: productLines.reduce((sum, line) => sum + line.quantity, 0),
-      };
-    });
+    return (wasteQuery.data?.items ?? [])
+      .map((session) => {
+        const productLines = session.lines.filter((line) => productLotIds.has(line.lotId));
+        if (productLines.length === 0) {
+          return null;
+        }
+
+        return {
+          ...session,
+          productLines,
+          productQty: productLines.reduce((sum, line) => sum + line.quantity, 0),
+        };
+      })
+      .filter((session): session is NonNullable<typeof session> => session !== null);
   }, [productLotIds, wasteQuery.data?.items]);
 
   const recentInventories = useMemo(() => {
-    return (inventoriesQuery.data?.items ?? []).map((inventory) => {
-      const line = inventory.lines.find((item) => item.productId === productId);
-      return {
-        ...inventory,
-        line,
-        delta: line ? line.realQuantity - line.theoreticalQuantity : 0,
-      };
-    });
+    return (inventoriesQuery.data?.items ?? [])
+      .map((inventory) => {
+        const line = inventory.lines.find((item) => item.productId === productId);
+        if (!line) {
+          return null;
+        }
+
+        return {
+          ...inventory,
+          line,
+          delta: line.realQuantity - line.theoreticalQuantity,
+        };
+      })
+      .filter((inventory): inventory is NonNullable<typeof inventory> => inventory !== null);
   }, [inventoriesQuery.data?.items, productId]);
 
   const quantityInDraft = useMemo(() => {
@@ -442,7 +454,7 @@ export function ProductDetailPage() {
             <div className="rounded-[22px] border border-white/70 bg-white p-4">
               <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Valeur du stock</p>
               <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-slate-950">{formatCurrency(stockSummary.availableValue)}</p>
-              <p className="mt-1 text-sm text-slate-600">Calculee a partir des couts connus sur les lots.</p>
+              <p className="mt-1 text-sm text-slate-600">Calculée à partir des coûts connus sur les lots.</p>
             </div>
             <div className="rounded-[22px] border border-white/70 bg-white p-4">
               <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Commande en cours</p>
@@ -492,7 +504,7 @@ export function ProductDetailPage() {
             <p className="mt-1 text-sm text-muted-foreground">Déduit des réceptions récentes de ce produit.</p>
           </div>
           <div className="rounded-2xl bg-muted/70 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Derniere livraison</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Dernière livraison</p>
             <p className="mt-2 text-base font-semibold text-foreground">
               {lastReception ? formatDate(lastReception.receptionDate ?? lastReception.createdAt) : "Aucune réception"}
             </p>
@@ -502,7 +514,7 @@ export function ProductDetailPage() {
       </SectionCard>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <SectionCard title="Disponible maintenant" description="Stock cumule sur les lots encore actifs.">
+        <SectionCard title="Disponible maintenant" description="Stock cumulé sur les lots encore actifs.">
           <p className="text-3xl font-semibold tracking-[-0.04em]">
             {formatQuantity(stockSummary.availableQuantity)} {product.unit}
           </p>
@@ -518,11 +530,11 @@ export function ProductDetailPage() {
           </div>
         </SectionCard>
 
-        <SectionCard title="Valeur du stock" description="Valeur calculee a partir des couts unitaires renseignes sur les lots.">
+        <SectionCard title="Valeur du stock" description="Valeur calculée à partir des coûts unitaires renseignés sur les lots.">
           <MetricValue size="xl">{formatCurrency(stockSummary.availableValue)}</MetricValue>
         </SectionCard>
 
-        <SectionCard title="Prix unitaire de repère" description="Dernier cout connu sur les lots charges pour ce produit.">
+        <SectionCard title="Prix unitaire de repère" description="Dernier coût connu sur les lots chargés pour ce produit.">
           <MetricValue size="xl" placeholder={stockSummary.latestUnitPrice === null}>
             {stockSummary.latestUnitPrice === null ? "Non renseigné" : formatCurrency(stockSummary.latestUnitPrice)}
           </MetricValue>
@@ -540,7 +552,7 @@ export function ProductDetailPage() {
             <div className="rounded-[18px] border border-amber-200 bg-amber-50 p-4">
               <p className="text-xs uppercase tracking-[0.18em] text-amber-800">A suivre</p>
               <p className="mt-2 text-xl font-semibold tracking-[-0.04em] text-amber-950">{lotSummary.soonLots}</p>
-              <p className="mt-1 text-sm text-amber-900/80">Lots proches de la date ou a surveiller.</p>
+              <p className="mt-1 text-sm text-amber-900/80">Lots proches de la date ou à surveiller.</p>
             </div>
             <div className="rounded-[18px] border border-red-200 bg-red-50 p-4">
               <p className="text-xs uppercase tracking-[0.18em] text-red-700">A traiter</p>
@@ -665,7 +677,7 @@ export function ProductDetailPage() {
         (wasteQuery.data?.total ?? recentWaste.length) > recentWaste.length ||
         (inventoriesQuery.data?.total ?? recentInventories.length) > recentInventories.length) ? (
         <p className="text-xs text-muted-foreground">
-          Cette page synthétise les donnees chargees actuellement. Certains historiques longs peuvent etre tronques par les limites de chargement en place.
+          Cette page synthétise les données chargées actuellement. Certains historiques longs peuvent être tronqués par les limites de chargement en place.
         </p>
       ) : null}
 
@@ -681,7 +693,7 @@ export function ProductDetailPage() {
             <p className="mt-2 text-base font-semibold text-foreground">
               {quantityInDraft > 0 ? `${formatQuantity(quantityInDraft)} ${product.unit} déjà prévu(s)` : "Pas encore ajouté"}
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">Ajoutez ce produit a la commande pour preparer le prochain achat.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Ajoutez ce produit à la commande pour préparer le prochain achat.</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Button size="sm" onClick={handleRecommend}>
                 <ShoppingBasket className="h-4 w-4" />

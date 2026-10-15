@@ -20,7 +20,7 @@ const baseNavItems: AppNavItem[] = [
     label: "Catalogue",
     to: "/app/catalog",
     icon: Boxes,
-    description: "Consulter les produits et preparer les besoins.",
+    description: "Consulter les produits et préparer les besoins.",
   },
   {
     label: "Fournisseurs",
@@ -32,7 +32,7 @@ const baseNavItems: AppNavItem[] = [
     label: "Commandes",
     to: "/app/orders",
     icon: ShoppingCart,
-    description: "Preparer les achats avant les receptions.",
+    description: "Préparer les achats avant les réceptions.",
   },
   {
     label: "Inventaires",
@@ -44,7 +44,7 @@ const baseNavItems: AppNavItem[] = [
     label: "Pertes",
     to: "/app/waste-sessions",
     icon: Trash2,
-    description: "Declarer les produits perdus.",
+    description: "Déclarer les produits perdus.",
   },
 ];
 
@@ -53,13 +53,13 @@ const ownerNavItems: AppNavItem[] = [
     label: "Analyses",
     to: "/app/analyses",
     icon: ChartColumn,
-    description: "Suivre les resultats et les tendances.",
+    description: "Suivre les résultats et les tendances.",
   },
   {
     label: "Paramètres",
     to: "/app/settings",
     icon: Settings,
-    description: "Gerer l'equipe et les reglages.",
+    description: "Gérer l'équipe et les réglages.",
   },
 ];
 

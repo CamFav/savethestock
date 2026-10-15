@@ -79,7 +79,7 @@ export function RegisterPage() {
     <div className="mx-auto flex min-h-screen w-full max-w-md items-center px-4 py-10">
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Creer une societe</CardTitle>
+          <CardTitle>Créer une société</CardTitle>
           <CardDescription>Initialisez votre espace SaveTheStock.</CardDescription>
         </CardHeader>
 
