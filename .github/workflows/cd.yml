@@ -15,8 +15,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  FRONTEND_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/savethestock-frontend
-  BACKEND_IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/savethestock-backend
+  FRONTEND_IMAGE_NAME: ghcr.io/camfav/savethestock-frontend
+  BACKEND_IMAGE_NAME: ghcr.io/camfav/savethestock-backend
 
 jobs:
   build-and-push:
